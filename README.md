@@ -30,6 +30,8 @@ número `1.0.N`. No hace falta compilar en ninguna computadora.
 ```
 app/src/main/java/com/mskynas/tv/
 ├── MainActivity.kt        Punto de entrada
+├── player/
+│   └── PlayerActivity.kt  Reproductor nativo de pantalla completa
 ├── data/
 │   ├── Plex.kt            Cliente de la API de Plex (inicio de sesión, bibliotecas, URLs de video)
 │   ├── Models.kt          Modelos de datos y ayudantes de presentación
@@ -43,8 +45,7 @@ app/src/main/java/com/mskynas/tv/
     ├── ServerScreen.kt    Elegir servidor
     ├── HomeScreen.kt      Inicio
     ├── LibraryScreen.kt   Biblioteca, colecciones y cuadrícula de pósters
-    ├── DetailScreen.kt    Detalle de película o serie
-    └── PlayerScreen.kt    Reproductor
+    └── DetailScreen.kt    Detalle de película o serie
 ```
 
 ## Compilar en Android Studio (opcional)
