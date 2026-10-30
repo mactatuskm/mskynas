@@ -52,8 +52,18 @@ data class Item(
     val leafCount: Int? = null,
     val viewedLeafCount: Int? = null,
     val childCount: Int? = null,
+    val rating: Double? = null,
+    val audienceRating: Double? = null,
     @SerialName("Media") val media: List<Media> = emptyList(),
     @SerialName("Genre") val genres: List<Tag> = emptyList(),
+    /** Imágenes extra; aquí viene el logo del título ("clearLogo") cuando Plex lo tiene. */
+    @SerialName("Image") val images: List<ImageRef> = emptyList(),
+)
+
+@Serializable
+data class ImageRef(
+    val type: String = "",
+    val url: String = "",
 )
 
 @Serializable
@@ -105,6 +115,8 @@ data class HomeData(
     val deck: List<Item>,
     val libraries: List<Directory>,
     val watchlist: List<Item>,
+    /** Fila "Recién agregado" por biblioteca. */
+    val recent: List<Pair<Directory, List<Item>>> = emptyList(),
 )
 
 // ---- Ayudantes de presentación ----
@@ -131,6 +143,15 @@ val Item.progress: Float?
         if (d <= 0 || o <= 0) return null
         return (o.toFloat() / d).coerceIn(0f, 1f)
     }
+
+val Item.clearLogo: String? get() = images.firstOrNull { it.type == "clearLogo" }?.url
+
+/** Calificación del público si existe; si no, la de la crítica. */
+val Item.score: Double? get() = (audienceRating ?: rating)?.takeIf { it > 0 }
+
+/** Episodios sin ver de una serie o temporada. */
+val Item.unwatchedCount: Int
+    get() = if (type == "show" || type == "season") ((leafCount ?: 0) - (viewedLeafCount ?: 0)).coerceAtLeast(0) else 0
 
 val Item.isFullyWatched: Boolean
     get() = when (type) {

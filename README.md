@@ -38,14 +38,18 @@ app/src/main/java/com/mskynas/tv/
 │   ├── Session.kt         Cuenta y servidor guardados en el dispositivo
 │   └── Cache.kt           Caché en memoria para volver a pantallas al instante
 └── ui/
-    ├── Theme.kt           Colores de la app
+    ├── Theme.kt           Colores y medidas de la app
+    ├── Icons.kt           Íconos (trazos de Material, sin la librería completa)
     ├── Components.kt      Tarjetas, botones, filas y utilidades de foco
+    ├── Rail.kt            Barra lateral de navegación
+    ├── Hero.kt            Fondo y ficha del elemento enfocado
     ├── Nav.kt             Rutas entre pantallas
     ├── LoginScreen.kt     Código para plex.tv/link
     ├── ServerScreen.kt    Elegir servidor
     ├── HomeScreen.kt      Inicio
     ├── LibraryScreen.kt   Biblioteca, colecciones y cuadrícula de pósters
-    └── DetailScreen.kt    Detalle de película o serie
+    ├── DetailScreen.kt    Detalle de película o serie
+    └── SettingsScreen.kt  Ajustes
 ```
 
 ## Compilar en Android Studio (opcional)

@@ -20,3 +20,14 @@
   íconos vectoriales adaptativos: en Fire TV pueden verse como un disco vacío.
 - El reproductor es una Activity nativa (`player/PlayerActivity`), no Compose: dentro de
   Compose el SurfaceView quedaba tapado (audio sin imagen).
+- Dirección visual (fase 1, referencia: Zerk Play para Emby): acento morado `#7B61FF`, fondo
+  `#0A0A12`; barra lateral de íconos que se expande al enfocarla (`ui/Rail.kt`); hero dinámico
+  arriba que cambia con el foco (`ui/Hero.kt`: fondo, logo "clearLogo" o título, ★, datos,
+  progreso, sinopsis); tarjetas con borde blanco + brillo morado e insignias (visto / sin ver).
+  Paleta y medidas en `ui/Theme.kt`. Íconos dibujados a mano en `ui/Icons.kt` (sin la librería
+  de íconos completa, para no inflar el APK).
+- Solo contenido del servidor: nada de TMDB, tendencias externas ni Overseerr por ahora
+  (decisión del dueño; se puede revisar después). La Watchlist de plex.tv sí se usa.
+- Fases acordadas: 1) lenguaje visual ✔ 2) detalle completo (reparto, "Más como este",
+  versiones) 3) reproductor (saltar intro/créditos con marcadores de Plex, audio/subtítulos,
+  versiones) 4) descubrimiento local (Porque viste…, Top 10, filas por tema).

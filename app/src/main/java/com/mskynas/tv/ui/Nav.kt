@@ -18,6 +18,7 @@ object Routes {
     const val LOGIN = "login"
     const val SERVERS = "servers"
     const val HOME = "home"
+    const val SETTINGS = "settings"
     fun library(key: String) = "library/$key"
     fun collection(key: String) = "collection/$key"
     fun detail(key: String) = "detail/$key"
@@ -29,6 +30,25 @@ object Routes {
  */
 fun play(nav: NavController, ratingKey: String, resume: Boolean) {
     PlayerActivity.start(nav.context, ratingKey, resume)
+}
+
+/** Regresa al inicio sin apilar pantallas. */
+fun NavController.goHome() {
+    if (!popBackStack(Routes.HOME, inclusive = false)) navigate(Routes.HOME)
+}
+
+/** Secciones de la barra lateral: se abren encima del inicio, sin apilar una sobre otra. */
+fun NavController.goSection(route: String) {
+    navigate(route) {
+        popUpTo(Routes.HOME)
+        launchSingleTop = true
+    }
+}
+
+fun NavController.logout() {
+    Plex.session.clear()
+    Cache.clear()
+    navigate(Routes.LOGIN) { popUpTo(graph.id) { inclusive = true } }
 }
 
 /** A dónde lleva tocar un elemento, según su tipo. */
@@ -73,14 +93,11 @@ fun AppNav() {
                 onSelected = {
                     nav.navigate(Routes.HOME) { popUpTo(nav.graph.id) { inclusive = true } }
                 },
-                onLogout = {
-                    Plex.session.clear()
-                    Cache.clear()
-                    nav.navigate(Routes.LOGIN) { popUpTo(nav.graph.id) { inclusive = true } }
-                },
+                onLogout = { nav.logout() },
             )
         }
         composable(Routes.HOME) { HomeScreen(nav) }
+        composable(Routes.SETTINGS) { SettingsScreen(nav) }
         composable("library/{key}") { entry ->
             LibraryScreen(entry.arguments?.getString("key").orEmpty(), nav)
         }

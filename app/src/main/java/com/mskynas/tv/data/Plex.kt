@@ -144,6 +144,10 @@ object Plex {
 
     suspend fun sectionItems(key: String): List<Item> = pms("/library/sections/$key/all").metadata
 
+    /** Lo más reciente de una biblioteca (solo los primeros, para una fila del inicio). */
+    suspend fun recentlyAdded(key: String, count: Int = 24): List<Item> =
+        pms("/library/sections/$key/all?sort=addedAt:desc&X-Plex-Container-Start=0&X-Plex-Container-Size=$count").metadata
+
     suspend fun sectionCollections(key: String): List<Item> =
         pms("/library/sections/$key/collections").metadata
 
@@ -155,6 +159,12 @@ object Plex {
 
     suspend fun metadata(ratingKey: String): Item? =
         pms("/library/metadata/$ratingKey").metadata.firstOrNull()
+
+    /** Metadatos completos con caché en memoria: el hero los pide al mover el foco. */
+    suspend fun cachedMetadata(ratingKey: String): Item? {
+        Cache.meta[ratingKey]?.let { return it }
+        return runCatching { metadata(ratingKey) }.getOrNull()?.also { Cache.meta[ratingKey] = it }
+    }
 
     /** Busca en tu servidor un título de la Watchlist (que vive en plex.tv). */
     suspend fun findLocal(guid: String): Item? =
@@ -183,6 +193,18 @@ object Plex {
         val uri = session.serverUri ?: return null
         return "$uri/photo/:/transcode?width=$width&height=$height&minSize=1&upscale=1" +
             "&url=${Uri.encode(path)}&X-Plex-Token=${session.serverToken.orEmpty()}"
+    }
+
+    /**
+     * Imagen original sin pasar por el transcodificador. Para los logos de título, que son PNG
+     * con transparencia: el transcodificador de fotos los convertiría a JPG con fondo.
+     */
+    fun rawImage(path: String?): String? {
+        if (path.isNullOrBlank()) return null
+        if (path.startsWith("http")) return path
+        val uri = session.serverUri ?: return null
+        val sep = if (path.contains("?")) "&" else "?"
+        return "$uri$path${sep}X-Plex-Token=${session.serverToken.orEmpty()}"
     }
 
     /** Encabezados para las peticiones del reproductor. */

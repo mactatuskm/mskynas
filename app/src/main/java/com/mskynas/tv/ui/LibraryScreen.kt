@@ -40,6 +40,7 @@ import com.mskynas.tv.data.Plex
 import com.mskynas.tv.data.isFullyWatched
 import com.mskynas.tv.data.posterPath
 import com.mskynas.tv.data.progress
+import com.mskynas.tv.data.unwatchedCount
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 
@@ -66,42 +67,44 @@ fun LibraryScreen(sectionKey: String, nav: NavController) {
         }
     }
 
-    Column(Modifier.fillMaxSize().padding(top = 36.dp)) {
-        Row(Modifier.padding(horizontal = 48.dp), verticalAlignment = Alignment.CenterVertically) {
-            Text(
-                title,
-                color = Color.White,
-                fontSize = 30.sp,
-                fontWeight = FontWeight.Bold,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
-            Spacer(Modifier.width(32.dp))
-            ActionButton(
-                "Todo" + (all?.size?.let { " · $it" } ?: ""),
-                onClick = { tab = 0 },
-                highlighted = tab == 0,
-            )
-            Spacer(Modifier.width(12.dp))
-            ActionButton(
-                "Colecciones" + (collections?.size?.let { " · $it" } ?: ""),
-                onClick = { tab = 1 },
-                highlighted = tab == 1,
-            )
-        }
-        Spacer(Modifier.height(16.dp))
+    RailScaffold(nav, Sections.library(sectionKey)) {
+        Column(Modifier.fillMaxSize().padding(top = 36.dp)) {
+            Row(Modifier.padding(start = ContentStart, end = 48.dp), verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    title,
+                    color = Color.White,
+                    fontSize = 30.sp,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Spacer(Modifier.width(28.dp))
+                ActionButton(
+                    "Todo" + (all?.size?.let { "  $it" } ?: ""),
+                    onClick = { tab = 0 },
+                    highlighted = tab == 0,
+                )
+                Spacer(Modifier.width(10.dp))
+                ActionButton(
+                    "Colecciones" + (collections?.size?.let { "  $it" } ?: ""),
+                    onClick = { tab = 1 },
+                    highlighted = tab == 1,
+                )
+            }
+            Spacer(Modifier.height(12.dp))
 
-        val list = if (tab == 0) all else collections
-        when {
-            list == null && failure != null -> MessageBox(
-                failure.orEmpty(),
-                listOf(Action("Volver") { nav.popBackStack() }),
-            )
-            list == null -> LoadingBox()
-            list.isEmpty() -> MessageBox(
-                if (tab == 1) "Esta biblioteca no tiene colecciones." else "Esta biblioteca está vacía."
-            )
-            else -> key(tab) { PosterGrid(list, screen = "lib-$sectionKey-$tab", nav = nav) }
+            val list = if (tab == 0) all else collections
+            when {
+                list == null && failure != null -> MessageBox(
+                    failure.orEmpty(),
+                    listOf(Action("Volver") { nav.popBackStack() }),
+                )
+                list == null -> LoadingBox()
+                list.isEmpty() -> MessageBox(
+                    if (tab == 1) "Esta biblioteca no tiene colecciones." else "Esta biblioteca está vacía."
+                )
+                else -> key(tab) { PosterGrid(list, screen = "lib-$sectionKey-$tab", nav = nav) }
+            }
         }
     }
 }
@@ -118,24 +121,26 @@ fun CollectionScreen(collectionKey: String, nav: NavController) {
             .onFailure { if (list == null) failure = "No pude cargar esta colección." }
     }
 
-    Column(Modifier.fillMaxSize().padding(top = 36.dp)) {
-        Text(
-            title,
-            modifier = Modifier.padding(horizontal = 48.dp),
-            color = Color.White,
-            fontSize = 30.sp,
-            fontWeight = FontWeight.Bold,
-        )
-        Spacer(Modifier.height(16.dp))
-        val current = list
-        when {
-            current == null && failure != null -> MessageBox(
-                failure.orEmpty(),
-                listOf(Action("Volver") { nav.popBackStack() }),
+    RailScaffold(nav, current = "") {
+        Column(Modifier.fillMaxSize().padding(top = 36.dp)) {
+            Text(
+                title,
+                modifier = Modifier.padding(start = ContentStart, end = 48.dp),
+                color = Color.White,
+                fontSize = 30.sp,
+                fontWeight = FontWeight.Bold,
             )
-            current == null -> LoadingBox()
-            current.isEmpty() -> MessageBox("Esta colección está vacía.")
-            else -> PosterGrid(current, screen = "col-$collectionKey", nav = nav)
+            Spacer(Modifier.height(12.dp))
+            val current = list
+            when {
+                current == null && failure != null -> MessageBox(
+                    failure.orEmpty(),
+                    listOf(Action("Volver") { nav.popBackStack() }),
+                )
+                current == null -> LoadingBox()
+                current.isEmpty() -> MessageBox("Esta colección está vacía.")
+                else -> PosterGrid(current, screen = "col-$collectionKey", nav = nav)
+            }
         }
     }
 }
@@ -146,20 +151,21 @@ fun PosterGrid(list: List<Item>, screen: String, nav: NavController) {
     val target = if (saved != null && list.any { it.ratingKey == saved }) saved else list.firstOrNull()?.ratingKey
 
     LazyVerticalGrid(
-        columns = GridCells.Adaptive(128.dp),
+        columns = GridCells.Adaptive(116.dp),
         modifier = Modifier.fillMaxSize(),
         state = rememberLazyGridState(),
-        contentPadding = PaddingValues(start = 48.dp, end = 48.dp, top = 12.dp, bottom = 48.dp),
-        horizontalArrangement = Arrangement.spacedBy(20.dp),
-        verticalArrangement = Arrangement.spacedBy(24.dp),
+        contentPadding = PaddingValues(start = ContentStart, end = 48.dp, top = 12.dp, bottom = 48.dp),
+        horizontalArrangement = Arrangement.spacedBy(18.dp),
+        verticalArrangement = Arrangement.spacedBy(22.dp),
     ) {
         items(list, key = { it.ratingKey }) { m ->
             PosterCard(
                 title = m.title,
                 subtitle = gridSubtitle(m),
-                image = Plex.image(m.posterPath, 300, 450),
+                image = Plex.image(m.posterPath, 232, 348),
                 progress = m.progress,
                 watched = m.isFullyWatched,
+                badge = m.unwatchedCount,
                 focus = m.ratingKey == target,
                 onFocused = { Cache.lastFocus[screen] = m.ratingKey },
                 onClick = { openItem(nav, m) },
@@ -170,9 +176,5 @@ fun PosterGrid(list: List<Item>, screen: String, nav: NavController) {
 
 private fun gridSubtitle(m: Item): String? = when (m.type) {
     "collection" -> m.childCount?.let { "$it títulos" }
-    "show" -> {
-        val pending = (m.leafCount ?: 0) - (m.viewedLeafCount ?: 0)
-        if (pending > 0 && (m.viewedLeafCount ?: 0) > 0) "$pending sin ver" else m.year?.toString()
-    }
     else -> m.year?.toString()
 }
