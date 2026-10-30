@@ -52,11 +52,11 @@ fun DetailScreen(ratingKey: String, nav: NavController) {
     var episodes by remember { mutableStateOf<List<Item>?>(null) }
     var failure by remember { mutableStateOf<String?>(null) }
 
-    LaunchedEffect(ratingKey) {
+    LaunchedEffect(ratingKey, Plex.playbackTick) {
         val result = runCatching { Plex.metadata(ratingKey) ?: throw IOException("No encontrado") }
         val m = result.getOrNull()
         if (m == null) {
-            failure = "No pude cargar este título."
+            if (item == null) failure = "No pude cargar este título."
             return@LaunchedEffect
         }
         item = m
@@ -72,11 +72,19 @@ fun DetailScreen(ratingKey: String, nav: NavController) {
         }
     }
 
-    LaunchedEffect(seasonKey) {
+    var loadedSeason by remember { mutableStateOf<String?>(null) }
+    LaunchedEffect(seasonKey, Plex.playbackTick) {
         val k = seasonKey ?: return@LaunchedEffect
         Cache.season[ratingKey] = k
-        episodes = null
-        episodes = runCatching { Plex.children(k) }.getOrDefault(emptyList())
+        // Al cambiar de temporada se limpia la lista; al volver del reproductor solo se refresca.
+        if (loadedSeason != k) episodes = null
+        val list = runCatching { Plex.children(k) }.getOrNull()
+        if (list != null) {
+            episodes = list
+            loadedSeason = k
+        } else if (episodes == null) {
+            episodes = emptyList()
+        }
     }
 
     val m = item
@@ -190,19 +198,19 @@ private fun Info(m: Item, episodes: List<Item>?, nav: NavController, screen: Str
                     if (offset > 0) {
                         ActionButton(
                             "▶  Continuar desde ${fmtClock(offset)}",
-                            onClick = { nav.navigate(Routes.player(m.ratingKey, resume = true)) },
+                            onClick = { play(nav, m.ratingKey, resume = true) },
                             modifier = playModifier,
                             highlighted = true,
                         )
                         ActionButton(
                             "Desde el inicio",
-                            onClick = { nav.navigate(Routes.player(m.ratingKey, resume = false)) },
+                            onClick = { play(nav, m.ratingKey, resume = false) },
                             modifier = Modifier.trackFocus(screen, "restart"),
                         )
                     } else {
                         ActionButton(
                             "▶  Reproducir",
-                            onClick = { nav.navigate(Routes.player(m.ratingKey, resume = false)) },
+                            onClick = { play(nav, m.ratingKey, resume = false) },
                             modifier = playModifier,
                             highlighted = true,
                         )
@@ -218,7 +226,7 @@ private fun Info(m: Item, episodes: List<Item>?, nav: NavController, screen: Str
                     if (next != null) {
                         ActionButton(
                             "▶  ${next.episodeLabel}",
-                            onClick = { nav.navigate(Routes.player(next.ratingKey, (next.viewOffset ?: 0L) > 0)) },
+                            onClick = { play(nav, next.ratingKey, (next.viewOffset ?: 0L) > 0) },
                             modifier = playModifier,
                             highlighted = true,
                         )
@@ -253,7 +261,7 @@ private fun Episodes(episodes: List<Item>?, nav: NavController, screen: String) 
                 modifier = Modifier.width(260.dp),
                 focus = saved == k,
                 onFocused = { Cache.lastFocus[screen] = k },
-                onClick = { nav.navigate(Routes.player(e.ratingKey, (e.viewOffset ?: 0L) > 0)) },
+                onClick = { play(nav, e.ratingKey, (e.viewOffset ?: 0L) > 0) },
             )
         }
     }

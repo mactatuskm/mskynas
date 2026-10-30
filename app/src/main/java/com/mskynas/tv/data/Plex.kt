@@ -2,6 +2,9 @@ package com.mskynas.tv.data
 
 import android.net.Uri
 import android.os.Build
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.setValue
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -25,6 +28,13 @@ object Plex {
     private const val VERSION = "1.0"
 
     lateinit var session: Session
+        private set
+
+    /**
+     * Sube cada vez que termina una reproducción y su progreso ya quedó guardado.
+     * Las pantallas lo observan para refrescar "Continuar viendo" y las barras de progreso.
+     */
+    var playbackTick by mutableIntStateOf(0)
         private set
 
     /** Para tareas que deben terminar aunque la pantalla se cierre (reportar progreso). */
@@ -253,6 +263,7 @@ object Plex {
                     call("$uri/:/scrobble?identifier=com.plexapp.plugins.library&key=$ratingKey", token)
                 }
             }
+            playbackTick += 1
         }
     }
 }

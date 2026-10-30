@@ -6,14 +6,13 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.navigation.NavController
-import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import androidx.navigation.navArgument
 import com.mskynas.tv.data.Cache
 import com.mskynas.tv.data.Item
 import com.mskynas.tv.data.Plex
+import com.mskynas.tv.player.PlayerActivity
 
 object Routes {
     const val LOGIN = "login"
@@ -22,7 +21,14 @@ object Routes {
     fun library(key: String) = "library/$key"
     fun collection(key: String) = "collection/$key"
     fun detail(key: String) = "detail/$key"
-    fun player(key: String, resume: Boolean) = "player/$key?resume=$resume"
+}
+
+/**
+ * El reproductor vive en su propia Activity nativa (no en Compose): así el video va directo
+ * a la superficie de hardware de la TV, que es lo más eficiente para 4K/HEVC.
+ */
+fun play(nav: NavController, ratingKey: String, resume: Boolean) {
+    PlayerActivity.start(nav.context, ratingKey, resume)
 }
 
 /** A dónde lleva tocar un elemento, según su tipo. */
@@ -32,7 +38,7 @@ fun openItem(nav: NavController, item: Item) {
             Cache.titles[item.ratingKey] = item.title
             nav.navigate(Routes.collection(item.ratingKey))
         }
-        "episode" -> nav.navigate(Routes.player(item.ratingKey, (item.viewOffset ?: 0L) > 0))
+        "episode" -> play(nav, item.ratingKey, (item.viewOffset ?: 0L) > 0)
         else -> nav.navigate(Routes.detail(item.ratingKey))
     }
 }
@@ -83,23 +89,6 @@ fun AppNav() {
         }
         composable("detail/{key}") { entry ->
             DetailScreen(entry.arguments?.getString("key").orEmpty(), nav)
-        }
-        composable(
-            "player/{key}?resume={resume}",
-            arguments = listOf(navArgument("resume") {
-                type = NavType.BoolType
-                defaultValue = false
-            }),
-        ) { entry ->
-            PlayerScreen(
-                ratingKey = entry.arguments?.getString("key").orEmpty(),
-                resume = entry.arguments?.getBoolean("resume") ?: false,
-                onExit = {
-                    if (nav.currentBackStackEntry?.destination?.route?.startsWith("player") == true) {
-                        nav.popBackStack()
-                    }
-                },
-            )
         }
     }
 }

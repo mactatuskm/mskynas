@@ -51,7 +51,7 @@ fun LibraryScreen(sectionKey: String, nav: NavController) {
     var collections by remember { mutableStateOf(Cache.collections[sectionKey]) }
     var failure by remember { mutableStateOf<String?>(null) }
 
-    LaunchedEffect(sectionKey) {
+    LaunchedEffect(sectionKey, Plex.playbackTick) {
         coroutineScope {
             launch {
                 runCatching { Plex.sectionItems(sectionKey) }
@@ -112,7 +112,7 @@ fun CollectionScreen(collectionKey: String, nav: NavController) {
     var list by remember { mutableStateOf(Cache.collectionItems[collectionKey]) }
     var failure by remember { mutableStateOf<String?>(null) }
 
-    LaunchedEffect(collectionKey) {
+    LaunchedEffect(collectionKey, Plex.playbackTick) {
         runCatching { Plex.collectionItems(collectionKey) }
             .onSuccess { list = it; Cache.collectionItems[collectionKey] = it }
             .onFailure { if (list == null) failure = "No pude cargar esta colección." }

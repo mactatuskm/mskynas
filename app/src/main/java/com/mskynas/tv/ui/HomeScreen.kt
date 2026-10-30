@@ -67,7 +67,7 @@ fun HomeScreen(nav: NavController) {
     val scope = rememberCoroutineScope()
 
     // Muestra lo guardado al instante y refresca en segundo plano.
-    LaunchedEffect(attempt) {
+    LaunchedEffect(attempt, Plex.playbackTick) {
         failure = null
         val result = runCatching { loadHome() }
             .recoverCatching { if (Plex.reconnect()) loadHome() else throw it }
@@ -154,7 +154,7 @@ private fun HomeContent(data: HomeData, nav: NavController, onWatchlist: (Item) 
                             modifier = Modifier.width(300.dp),
                             focus = target == k,
                             onFocused = { mark(k) },
-                            onClick = { nav.navigate(Routes.player(m.ratingKey, resume = true)) },
+                            onClick = { play(nav, m.ratingKey, resume = true) },
                         )
                     }
                 }
