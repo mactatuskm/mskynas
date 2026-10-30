@@ -14,3 +14,9 @@
   y publica `mskynas.apk` en Releases. Revisar ahí los errores de compilación.
 - La llave `keystore/mskynas.jks` es fija a propósito; no regenerarla.
 - `minSdk 26` (Fire OS 7+). Los Fire TV con Vega OS no instalan APKs.
+- Todas las TVs son Fire TV. Su launcher ignora `android:banner` en apps instaladas por fuera
+  de la tienda: usa el ícono de la Activity principal. Por eso MainActivity declara
+  `android:icon="@drawable/banner"` (PNG 16:9 en drawable-xhdpi/xxhdpi/xxxhdpi). Nada de
+  íconos vectoriales adaptativos: en Fire TV pueden verse como un disco vacío.
+- El reproductor es una Activity nativa (`player/PlayerActivity`), no Compose: dentro de
+  Compose el SurfaceView quedaba tapado (audio sin imagen).

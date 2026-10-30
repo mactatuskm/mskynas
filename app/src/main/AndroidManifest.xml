@@ -14,8 +14,12 @@
         android:usesCleartextTraffic="true"
         android:supportsRtl="true">
 
+        <!-- Fire TV ignora android:banner en apps instaladas por fuera de la tienda y arma el
+             mosaico con el ícono de esta Activity, así que aquí va el banner 16:9 en PNG.
+             El ícono cuadrado de la app (mipmap) se sigue usando en Ajustes → Apps. -->
         <activity
             android:name=".MainActivity"
+            android:icon="@drawable/banner"
             android:exported="true"
             android:screenOrientation="landscape"
             android:configChanges="keyboard|keyboardHidden|navigation|orientation|screenLayout|screenSize|smallestScreenSize|uiMode">

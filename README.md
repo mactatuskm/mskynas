@@ -52,6 +52,13 @@ app/src/main/java/com/mskynas/tv/
 Solo hace falta para probar cambios al momento: *File → Open* la carpeta del repositorio
 y presiona ▶ con la Fire TV conectada por ADB.
 
+## Íconos en Fire TV
+
+El mosaico de la pantalla principal es `banner.png` (16:9), en tres tamaños:
+`drawable-xhdpi` 320×180, `drawable-xxhdpi` 480×270 y `drawable-xxxhdpi` 640×360.
+El ícono cuadrado (`mipmap-*/ic_launcher.png`) solo aparece en Ajustes → Apps.
+Fire TV guarda el ícono en caché: tras cambiarlo hay que desinstalar y volver a instalar.
+
 ## Firma
 
 `keystore/mskynas.jks` es la llave con la que se firman todas las versiones, para que cada
