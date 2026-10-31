@@ -12,6 +12,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonObject
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
@@ -98,10 +100,48 @@ object Plex {
     suspend fun checkPin(id: Long): Pin =
         json.decodeFromString(call("https://plex.tv/api/v2/pins/$id", null))
 
-    suspend fun servers(): List<Resource> =
+    suspend fun servers(token: String? = session.userToken): List<Resource> =
         json.decodeFromString<List<Resource>>(
-            call("https://plex.tv/api/v2/resources?includeHttps=1&includeRelay=1", session.userToken)
+            call("https://plex.tv/api/v2/resources?includeHttps=1&includeRelay=1", token)
         ).filter { it.provides.contains("server") }
+
+    // ---------- Perfiles (Plex Home) ----------
+
+    /** Perfiles de la cuenta. Si la cuenta no usa Plex Home, devuelve uno solo (o ninguno). */
+    suspend fun homeUsers(): List<HomeUser> {
+        val element = json.parseToJsonElement(call("https://plex.tv/api/v2/home/users", session.accountToken))
+        val array = when (element) {
+            is JsonArray -> element
+            is JsonObject -> element["users"] as? JsonArray ?: JsonArray(emptyList())
+            else -> JsonArray(emptyList())
+        }
+        return array.map { json.decodeFromJsonElement(HomeUser.serializer(), it) }
+    }
+
+    enum class SwitchResult { OK, WRONG_PIN, NO_ACCESS, FAILED }
+
+    /**
+     * Cambia al perfil: Plex devuelve un token para ese perfil y, con él, se obtiene
+     * su acceso al servidor actual (cada perfil tiene su propio progreso y lista).
+     */
+    suspend fun switchProfile(user: HomeUser, pin: String?): SwitchResult {
+        val query = if (pin != null) "?pin=${Uri.encode(pin)}" else ""
+        val body = try {
+            call("https://plex.tv/api/home/users/${user.id}/switch$query", session.accountToken, post = true)
+        } catch (e: IOException) {
+            val code = e.message?.removePrefix("HTTP ")?.toIntOrNull()
+            return if (pin != null && code != null && code in setOf(401, 403, 422)) SwitchResult.WRONG_PIN else SwitchResult.FAILED
+        }
+        // La respuesta puede venir en XML o JSON según la versión de plex.tv.
+        val token = Regex("authenticationToken=\"([^\"]+)\"").find(body)?.groupValues?.get(1)
+            ?: Regex("\"(?:authToken|authenticationToken)\"\\s*:\\s*\"([^\"]+)\"").find(body)?.groupValues?.get(1)
+            ?: return SwitchResult.FAILED
+        val serverId = session.serverId ?: return SwitchResult.FAILED
+        val resources = runCatching { servers(token) }.getOrNull() ?: return SwitchResult.FAILED
+        val server = resources.firstOrNull { it.clientIdentifier == serverId } ?: return SwitchResult.NO_ACCESS
+        session.setProfile(user, token, server.accessToken ?: token)
+        return SwitchResult.OK
+    }
 
     /** Prueba las conexiones del servidor: primero la red local, luego remota y al final el relay. */
     suspend fun pickConnection(resource: Resource): String? {

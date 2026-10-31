@@ -2,6 +2,8 @@
 
 package com.mskynas.tv.ui
 
+import android.app.Activity
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
@@ -34,6 +36,7 @@ import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -45,6 +48,7 @@ import androidx.tv.material3.Icon
 import androidx.tv.material3.Surface
 import androidx.tv.material3.Text
 import com.mskynas.tv.data.Cache
+import com.mskynas.tv.data.Plex
 
 /** Claves de sección para marcar en la barra lateral dónde estás. */
 object Sections {
@@ -53,17 +57,47 @@ object Sections {
     fun library(key: String) = "lib-$key"
 }
 
-/** Envuelve una pantalla con la barra lateral flotando a la izquierda. */
+/**
+ * Envuelve una pantalla con la barra lateral flotando a la izquierda.
+ * En el inicio, Atrás primero lleva el foco a la barra; si ya está ahí, pregunta si quieres salir.
+ */
 @Composable
 fun RailScaffold(nav: NavController, current: String, content: @Composable () -> Unit) {
+    val selectedRequester = remember { FocusRequester() }
+    var railFocused by remember { mutableStateOf(false) }
+    var askExit by remember { mutableStateOf(false) }
+    val activity = LocalContext.current as? Activity
+
+    BackHandler(enabled = current == Sections.HOME) {
+        if (railFocused) {
+            askExit = true
+            return@BackHandler
+        }
+        runCatching { selectedRequester.requestFocus() }
+    }
+
     Box(Modifier.fillMaxSize()) {
         content()
-        SideRail(nav, current)
+        SideRail(nav, current, selectedRequester, onFocusChange = { railFocused = it })
+    }
+
+    if (askExit) {
+        ConfirmDialog(
+            title = "¿Salir de mskynas?",
+            confirm = "Salir",
+            onConfirm = { activity?.finish() },
+            onDismiss = { askExit = false },
+        )
     }
 }
 
 @Composable
-private fun SideRail(nav: NavController, current: String) {
+private fun SideRail(
+    nav: NavController,
+    current: String,
+    selectedRequester: FocusRequester,
+    onFocusChange: (Boolean) -> Unit,
+) {
     var expanded by remember { mutableStateOf(false) }
     val width by animateDpAsState(
         targetValue = if (expanded) 240.dp else RailCollapsed,
@@ -71,9 +105,9 @@ private fun SideRail(nav: NavController, current: String) {
         label = "rail",
     )
     val libraries = Cache.home?.libraries.orEmpty()
-    val selectedRequester = remember { FocusRequester() }
     val hasSelected = current == Sections.HOME || current == Sections.SETTINGS ||
         libraries.any { Sections.library(it.key) == current }
+    val showProfile = Cache.profiles.size > 1
 
     Column(
         Modifier
@@ -85,7 +119,10 @@ private fun SideRail(nav: NavController, current: String) {
                     else listOf(Bg.copy(alpha = 0.92f), Bg.copy(alpha = 0f))
                 )
             )
-            .onFocusChanged { expanded = it.hasFocus }
+            .onFocusChanged {
+                expanded = it.hasFocus
+                onFocusChange(it.hasFocus)
+            }
             // Al entrar a la barra, el foco cae en la sección actual (no en la más cercana).
             .focusProperties { enter = { if (hasSelected) selectedRequester else FocusRequester.Default } }
             .focusGroup()
@@ -115,6 +152,23 @@ private fun SideRail(nav: NavController, current: String) {
         }
 
         Spacer(Modifier.weight(1f))
+        if (showProfile) {
+            val title = Plex.session.profileTitle
+                ?: Cache.profiles.firstOrNull { it.admin }?.title
+                ?: "Perfil"
+            val thumb = Plex.session.profileThumb
+                ?: Cache.profiles.firstOrNull { it.admin }?.thumb
+            RailItem(
+                icon = null,
+                label = title,
+                selected = false,
+                expanded = expanded,
+                requester = null,
+                avatar = thumb to title,
+            ) {
+                nav.navigate(Routes.PROFILES)
+            }
+        }
         RailItem(AppIcons.Settings, "Ajustes", current == Sections.SETTINGS, expanded, req(Sections.SETTINGS)) {
             nav.goSection(Routes.SETTINGS)
         }
@@ -136,11 +190,12 @@ private fun LogoMark() {
 
 @Composable
 private fun RailItem(
-    icon: ImageVector,
+    icon: ImageVector?,
     label: String,
     selected: Boolean,
     expanded: Boolean,
     requester: FocusRequester?,
+    avatar: Pair<String?, String>? = null,
     onClick: () -> Unit,
 ) {
     Surface(
@@ -162,7 +217,11 @@ private fun RailItem(
             Modifier.fillMaxSize().padding(start = 12.dp, end = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Icon(icon, contentDescription = label, modifier = Modifier.size(24.dp))
+            if (avatar != null) {
+                Avatar(avatar.second, avatar.first, Modifier.size(26.dp), initialSize = 12.sp)
+            } else if (icon != null) {
+                Icon(icon, contentDescription = label, modifier = Modifier.size(24.dp))
+            }
             if (expanded) {
                 Spacer(Modifier.width(16.dp))
                 Text(

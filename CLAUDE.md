@@ -36,3 +36,10 @@
   ofrece actualizar, descarga `mskynas.apk` al caché y abre el instalador con un FileProvider.
   Las notas que ve el usuario son el mensaje del commit: escribirlos en español, claros y para él.
   Requiere el permiso "Instalar apps desconocidas" para mskynas (se pide la primera vez).
+- Perfiles (Plex Home): al abrir la app se muestra "¿Quién está viendo?" (`ui/ProfilesScreen.kt`).
+  Se listan con `plex.tv/api/v2/home/users` usando el token de la cuenta principal
+  (`Session.accountToken`); al elegir uno, `POST plex.tv/api/home/users/{id}/switch[?pin=]` da su
+  token y con él `api/v2/resources` da su acceso al servidor. Si la cuenta tiene un solo perfil,
+  pasa directo al inicio. El avatar del perfil aparece en la barra lateral para cambiarlo.
+- Atrás en el inicio: el primero lleva el foco a la barra lateral; el siguiente pregunta
+  "¿Salir de mskynas?" (`RailScaffold`).

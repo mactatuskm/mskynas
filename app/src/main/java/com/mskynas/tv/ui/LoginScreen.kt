@@ -46,7 +46,7 @@ fun LoginScreen(onDone: () -> Unit) {
                     token = runCatching { Plex.checkPin(pin.id).authToken }.getOrNull()
                 }
                 if (!token.isNullOrBlank()) {
-                    Plex.session.userToken = token
+                    Plex.session.login(token)
                     onDone()
                     return@LaunchedEffect
                 }

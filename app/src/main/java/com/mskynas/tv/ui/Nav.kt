@@ -22,6 +22,7 @@ object Routes {
     const val SERVERS = "servers"
     const val HOME = "home"
     const val SETTINGS = "settings"
+    const val PROFILES = "profiles"
     fun library(key: String) = "library/$key"
     fun collection(key: String) = "collection/$key"
     fun detail(key: String) = "detail/$key"
@@ -73,7 +74,8 @@ fun AppNav() {
         when {
             Plex.session.userToken == null -> Routes.LOGIN
             Plex.session.serverUri == null -> Routes.SERVERS
-            else -> Routes.HOME
+            // Con la cuenta y el servidor listos, primero se elige perfil.
+            else -> Routes.PROFILES
         }
     }
 
@@ -106,11 +108,12 @@ fun AppNav() {
         composable(Routes.SERVERS) {
             ServerScreen(
                 onSelected = {
-                    nav.navigate(Routes.HOME) { popUpTo(nav.graph.id) { inclusive = true } }
+                    nav.navigate(Routes.PROFILES) { popUpTo(nav.graph.id) { inclusive = true } }
                 },
                 onLogout = { nav.logout() },
             )
         }
+        composable(Routes.PROFILES) { ProfilesScreen(nav) }
         composable(Routes.HOME) { HomeScreen(nav) }
         composable(Routes.SETTINGS) { SettingsScreen(nav) }
         composable("library/{key}") { entry ->

@@ -58,6 +58,8 @@ app/src/main/java/com/mskynas/tv/
     ├── HomeScreen.kt      Inicio
     ├── LibraryScreen.kt   Biblioteca, colecciones y cuadrícula de pósters
     ├── DetailScreen.kt    Detalle de película o serie
+    ├── ProfilesScreen.kt  "¿Quién está viendo?" y teclado de PIN
+    ├── Dialogs.kt         Ventanas comunes (confirmar salida, etc.)
     ├── SettingsScreen.kt  Ajustes
     └── UpdateDialog.kt    Ventana de "Hay una versión nueva"
 ```

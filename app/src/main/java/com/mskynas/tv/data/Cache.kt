@@ -20,6 +20,9 @@ object Cache {
     /** Metadatos completos (logo, géneros, calificación) para el hero. */
     val meta = HashMap<String, Item>()
 
+    /** Perfiles de Plex Home (no se borran al cambiar de perfil). */
+    var profiles: List<HomeUser> = emptyList()
+
     /** Último elemento enfocado por pantalla, para regresar al mismo lugar. */
     val lastFocus = HashMap<String, String>()
 

@@ -111,6 +111,22 @@ data class Connection(
     val relay: Boolean = false,
 )
 
+/** Un perfil de Plex Home. */
+@Serializable
+data class HomeUser(
+    val id: Long = 0,
+    val uuid: String = "",
+    val title: String = "",
+    val thumb: String? = null,
+    val admin: Boolean = false,
+    @SerialName("protected") val isProtected: Boolean = false,
+    val hasPassword: Boolean = false,
+    val restricted: Boolean = false,
+) {
+    /** Pide PIN para entrar. */
+    val locked: Boolean get() = isProtected || hasPassword
+}
+
 data class HomeData(
     val deck: List<Item>,
     val libraries: List<Directory>,
