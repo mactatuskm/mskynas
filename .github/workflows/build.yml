@@ -6,6 +6,9 @@ name: Compilar APK
 on:
   push:
     branches: [main]
+    # Cambios solo de notas no generan versión nueva (ni aviso de actualización en las TVs).
+    paths-ignore:
+      - "**.md"
   workflow_dispatch:
 
 permissions:

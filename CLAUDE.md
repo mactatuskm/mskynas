@@ -52,3 +52,8 @@
   de 300 MB con `respectCacheHeaders(false)` (MainActivity). Peticiones a plex.tv con timeouts cortos.
 - Se probó un inicio estilo Disney+ (carrusel + pestañas) y al dueño no le gustó: se revirtió.
   El inicio actual es el de la fase 1 (hero dinámico + filas). Él diseñará el inicio en Illustrator.
+- Estructura base de la app = artifact "Mapa de pantallas mskynas" (decisión del dueño):
+  Selección de perfil → Home. Desde Home, secciones del menú: Movies (Recommended, Browse,
+  Collections), Series (Recommended, Browse, Collections), For you (Lists, Watchlist) y Calendar
+  (próximos estrenos: episodios de sus series y estreno digital de películas de su Watchlist, vía
+  TMDB). Desde cualquier póster: Detalle → Reproductor (diseño por confirmar). Ajustes sigue existiendo.
