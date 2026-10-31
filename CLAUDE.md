@@ -55,7 +55,7 @@
 - Estructura base de la app = artifact "Mapa de pantallas mskynas" (decisión del dueño):
   Selección de perfil → Home. Desde Home: Movies (Recommended, Browse, Collections), Series
   (Recommended, Browse, Collections), Calendar (próximos estrenos: episodios de sus series y estreno
-  digital de películas de su Watchlist, vía TMDB) y For you (contenido por definir).
+  digital de películas de su Watchlist, vía TMDB). La sección For you se descartó.
   Menú del perfil (al elegir el avatar; referencia: menú de perfil de otra app de Plex con encabezado
   avatar + nombre + "ADMIN · servidor"): Switch Profile, Watchlist, Lists, History (historial de lo
   visto), Settings, Switch Server, Sign Out. Desde cualquier póster: Detalle → Reproductor
