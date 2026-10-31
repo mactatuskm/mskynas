@@ -56,4 +56,5 @@
   Selección de perfil → Home. Desde Home, secciones del menú: Movies (Recommended, Browse,
   Collections), Series (Recommended, Browse, Collections), For you (Lists, Watchlist) y Calendar
   (próximos estrenos: episodios de sus series y estreno digital de películas de su Watchlist, vía
-  TMDB). Desde cualquier póster: Detalle → Reproductor (diseño por confirmar). Ajustes sigue existiendo.
+  TMDB), Cambiar perfil (desde el avatar del menú, vuelve a Selección de perfil) y Ajustes (Servidor,
+  Cuenta, Acerca de). Desde cualquier póster: Detalle → Reproductor (diseño por confirmar).
