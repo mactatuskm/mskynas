@@ -204,6 +204,12 @@ object Plex {
     suspend fun sectionWithGuids(key: String): List<Item> =
         pms("/library/sections/$key/all?includeGuids=1").metadata
 
+    /** Search: busca en todo tu servidor; solo películas y series. */
+    suspend fun search(query: String): List<Item> =
+        pms("/hubs/search?query=${Uri.encode(query)}&limit=30").hubs
+            .filter { it.type == "movie" || it.type == "show" }
+            .flatMap { it.metadata }
+
     /** Lists: las listas de video (playlists) del perfil. */
     suspend fun playlists(): List<Item> =
         pms("/playlists?playlistType=video").metadata.filter { it.playlistType == null || it.playlistType == "video" }

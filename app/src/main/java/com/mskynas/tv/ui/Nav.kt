@@ -25,6 +25,7 @@ object Routes {
     const val SETTINGS = "settings"
     const val PROFILES = "profiles"
     const val CALENDAR = "calendar"
+    const val SEARCH = "search"
     const val WATCHLIST = "watchlist"
     const val LISTS = "lists"
     const val HISTORY = "history"
@@ -128,6 +129,7 @@ fun AppNav() {
             SectionScreen(entry.arguments?.getString("type") ?: "movie", nav)
         }
         composable(Routes.CALENDAR) { CalendarScreen(nav) }
+        composable(Routes.SEARCH) { SearchScreen(nav) }
         composable(Routes.WATCHLIST) { WatchlistScreen(nav) }
         composable(Routes.LISTS) { ListsScreen(nav) }
         composable(Routes.HISTORY) { HistoryScreen(nav) }

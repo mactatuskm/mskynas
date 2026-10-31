@@ -13,6 +13,14 @@ data class Container(
     val size: Int = 0,
     @SerialName("Metadata") val metadata: List<Item> = emptyList(),
     @SerialName("Directory") val directories: List<Directory> = emptyList(),
+    @SerialName("Hub") val hubs: List<Hub> = emptyList(),
+)
+
+/** Grupo de resultados de búsqueda (películas, series…). */
+@Serializable
+data class Hub(
+    val type: String = "",
+    @SerialName("Metadata") val metadata: List<Item> = emptyList(),
 )
 
 /** Una biblioteca del servidor (Películas, Series...). */

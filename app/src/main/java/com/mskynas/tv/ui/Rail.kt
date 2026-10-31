@@ -53,6 +53,7 @@ import com.mskynas.tv.data.Plex
 /** Claves de sección para marcar en la barra lateral dónde estás (mapa de pantallas). */
 object Sections {
     const val HOME = "home"
+    const val SEARCH = "search"
     const val MOVIES = "movie"
     const val SERIES = "show"
     const val CALENDAR = "calendar"
@@ -107,6 +108,7 @@ private fun SideRail(
     )
     var menuOpen by remember { mutableStateOf(false) }
     val entries = listOf(
+        Triple(Sections.SEARCH, AppIcons.Search, "Search"),
         Triple(Sections.HOME, AppIcons.Home, "Home"),
         Triple(Sections.MOVIES, AppIcons.Movie, "Movies"),
         Triple(Sections.SERIES, AppIcons.Tv, "Series"),
@@ -151,6 +153,7 @@ private fun SideRail(
                 when (section) {
                     Sections.HOME -> nav.goHome()
                     Sections.CALENDAR -> nav.goSection(Routes.CALENDAR)
+                    Sections.SEARCH -> nav.goSection(Routes.SEARCH)
                     else -> nav.goSection(Routes.section(section))
                 }
             }

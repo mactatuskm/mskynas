@@ -53,15 +53,15 @@
 - Se probó un inicio estilo Disney+ (carrusel + pestañas) y al dueño no le gustó: se revirtió.
   El inicio actual es el de la fase 1 (hero dinámico + filas). Él diseñará el inicio en Illustrator.
 - Estructura base de la app = artifact "Mapa de pantallas mskynas" (decisión del dueño):
-  Selección de perfil → Home. Desde Home: Movies (Recommended, Browse, Collections), Series
+  Selección de perfil → Home. Desde Home: Search (películas y series del servidor), Movies (Recommended, Browse, Collections), Series
   (Recommended, Browse, Collections), Calendar (próximos estrenos: episodios de sus series y estreno
   digital de películas de su Watchlist, vía TMDB). La sección For you se descartó.
   Menú del perfil (al elegir el avatar; referencia: menú de perfil de otra app de Plex con encabezado
   avatar + nombre + "ADMIN · servidor"): Switch Profile, Watchlist, Lists, History (historial de lo
   visto), Settings, Switch Server, Sign Out. Desde cualquier póster: Detalle → Reproductor
   (diseño por confirmar).
-- Implementación del mapa: barra lateral = avatar (abre `ui/ProfileMenu.kt`), Home, Movies, Series,
-  Calendar. Movies/Series = `SectionScreen` (`ui/SectionScreens.kt`, ruta `section/{movie|show}`) con
+- Implementación del mapa: barra lateral = avatar (abre `ui/ProfileMenu.kt`), Search (`ui/SearchScreen.kt`,
+  `/hubs/search`), Home, Movies, Series, Calendar. Movies/Series = `SectionScreen` (`ui/SectionScreens.kt`, ruta `section/{movie|show}`) con
   pestañas Recommended (filas solo del servidor: continuar, recientes, mejor calificadas, por ver),
   Browse (cuadrícula de la biblioteca) y Collections; si hay varias bibliotecas del tipo, se elige con
   botones. Menú del perfil: Switch Profile, Watchlist, Lists (playlists de video), History

@@ -50,13 +50,14 @@ app/src/main/java/com/mskynas/tv/
     ├── Theme.kt           Colores y medidas de la app
     ├── Icons.kt           Íconos (trazos de Material, sin la librería completa)
     ├── Components.kt      Tarjetas, botones, filas y utilidades de foco
-    ├── Rail.kt            Barra lateral: avatar, Home, Movies, Series, Calendar
+    ├── Rail.kt            Barra lateral: avatar, Search, Home, Movies, Series, Calendar
     ├── Hero.kt            Fondo y ficha del elemento enfocado
     ├── Nav.kt             Rutas entre pantallas
     ├── LoginScreen.kt     Código para plex.tv/link
     ├── ServerScreen.kt    Elegir servidor
     ├── HomeScreen.kt      Inicio
     ├── SectionScreens.kt  Movies, Series, Calendar, Watchlist, Lists e History
+    ├── SearchScreen.kt    Search
     ├── ProfileMenu.kt     Menú del perfil (al elegir tu avatar)
     ├── LibraryScreen.kt   Colección y cuadrícula de pósters
     ├── DetailScreen.kt    Detalle de película o serie
