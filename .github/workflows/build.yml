@@ -32,10 +32,12 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
 
       - name: Compilar
+        env:
+          TMDB_TOKEN: ${{ secrets.TMDB_TOKEN }}
         run: |
           chmod +x gradlew
           set -o pipefail
-          if ! ./gradlew assembleRelease -PbuildNumber=${{ github.run_number }} 2>&1 | tee build.log; then
+          if ! ./gradlew assembleRelease -PbuildNumber=${{ github.run_number }} -PtmdbToken="$TMDB_TOKEN" 2>&1 | tee build.log; then
             # Publica los errores como anotación: se leen sin iniciar sesión en GitHub
             # (api.github.com/repos/<repo>/check-runs/<job>/annotations).
             errs=$(grep -E "^e: |error:|What went wrong" -A2 build.log | head -40 \

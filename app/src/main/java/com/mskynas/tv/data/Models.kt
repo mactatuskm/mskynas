@@ -64,7 +64,15 @@ data class Item(
     @SerialName("Genre") val genres: List<Tag> = emptyList(),
     /** Imágenes extra; aquí viene el logo del título ("clearLogo") cuando Plex lo tiene. */
     @SerialName("Image") val images: List<ImageRef> = emptyList(),
+    /** Identificadores externos ("tmdb://123", "imdb://tt…"); se piden con includeGuids=1. */
+    @SerialName("Guid") val guids: List<GuidRef> = emptyList(),
 )
+
+@Serializable
+data class GuidRef(val id: String = "")
+
+/** Número de TMDB del título, si Plex lo tiene. */
+val Item.tmdbId: Int? get() = guids.firstOrNull { it.id.startsWith("tmdb://") }?.id?.removePrefix("tmdb://")?.toIntOrNull()
 
 @Serializable
 data class ImageRef(

@@ -67,5 +67,8 @@
   botones. Menú del perfil: Switch Profile, Watchlist, Lists (playlists de video), History
   (`/status/sessions/history/all`, accountID 1 para la cuenta principal), Settings (Servidor, Acerca
   de), Switch Server, Sign Out (con confirmación). Etiquetas en inglés como en el mapa.
-  Calendar es por ahora un aviso de "muy pronto": falta la API key de TMDB.
+  Calendar: `data/Tmdb.kt` (token de lectura de TMDB desde el secreto de GitHub `TMDB_TOKEN` →
+  `BuildConfig.TMDB_TOKEN`; NUNCA escribir el token en el repo, que es público). Series: guid
+  `tmdb://` con `includeGuids=1` → `/tv/{id}` next_episode_to_air. Watchlist: `/movie/{id}/release_dates`
+  tipo 4 (MX, luego US); si falta el guid, búsqueda por título y año. Agrupado por día.
   El diseño visual de todas estas pantallas es provisional hasta que el dueño entregue sus diseños.

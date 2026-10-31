@@ -17,6 +17,9 @@ android {
         val build = (project.findProperty("buildNumber") as String?)?.toIntOrNull() ?: 1
         versionCode = build
         versionName = "1.0.$build"
+        // Token de TMDB (Calendar): viene del secreto TMDB_TOKEN de GitHub, nunca del código.
+        val tmdb = (project.findProperty("tmdbToken") as String?).orEmpty()
+        buildConfigField("String", "TMDB_TOKEN", "\"$tmdb\"")
     }
 
     signingConfigs {

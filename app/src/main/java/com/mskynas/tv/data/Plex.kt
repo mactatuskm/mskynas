@@ -200,6 +200,10 @@ object Plex {
     suspend fun sectionQuery(key: String, query: String, count: Int = 24): List<Item> =
         pms("/library/sections/$key/all?$query&X-Plex-Container-Start=0&X-Plex-Container-Size=$count").metadata
 
+    /** Todos los títulos con sus identificadores externos (TMDB), para el Calendar. */
+    suspend fun sectionWithGuids(key: String): List<Item> =
+        pms("/library/sections/$key/all?includeGuids=1").metadata
+
     /** Lists: las listas de video (playlists) del perfil. */
     suspend fun playlists(): List<Item> =
         pms("/playlists?playlistType=video").metadata.filter { it.playlistType == null || it.playlistType == "video" }
@@ -247,7 +251,7 @@ object Plex {
             val result = runCatching {
                 json.decodeFromString<Envelope>(
                     call(
-                        "$host/library/sections/watchlist/all?includeCollections=1&includeExternalMedia=1" +
+                        "$host/library/sections/watchlist/all?includeCollections=1&includeExternalMedia=1&includeGuids=1" +
                             "&X-Plex-Container-Start=0&X-Plex-Container-Size=50",
                         session.userToken,
                         client = cloud,

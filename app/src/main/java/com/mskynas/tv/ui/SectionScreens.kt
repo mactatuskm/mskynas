@@ -41,6 +41,8 @@ import androidx.tv.material3.ExperimentalTvMaterial3Api
 import androidx.tv.material3.Icon
 import androidx.tv.material3.Text
 import com.mskynas.tv.data.Cache
+import com.mskynas.tv.data.CalendarEntry
+import com.mskynas.tv.data.Tmdb
 import com.mskynas.tv.data.Directory
 import com.mskynas.tv.data.Item
 import com.mskynas.tv.data.Plex
@@ -59,6 +61,8 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 import java.util.Date
 import java.util.Locale
 
@@ -243,28 +247,88 @@ private fun LibraryGrid(libKey: String, collections: Boolean, nav: NavController
 
 // ---------- Calendar ----------
 
-/** Calendar: próximos estrenos. Pendiente de conectar con TMDB. */
+private val dayFormat = DateTimeFormatter.ofPattern("EEEE d 'de' MMMM", Locale("es", "MX"))
+
+private fun dayLabel(date: LocalDate): String {
+    val today = LocalDate.now()
+    return when (date) {
+        today -> "Hoy"
+        today.plusDays(1) -> "Mañana"
+        else -> if (date.isBefore(today)) "Ya disponible · " + date.format(dayFormat) else date.format(dayFormat)
+    }.replaceFirstChar { it.uppercase() }
+}
+
+private suspend fun loadCalendar(): List<CalendarEntry> = coroutineScope {
+    val shows = async {
+        librariesOf("show").map { dir -> async { runCatching { Plex.sectionWithGuids(dir.key) }.getOrDefault(emptyList()) } }
+            .awaitAll().flatten()
+    }
+    val watchlist = async { runCatching { Plex.watchlist() }.getOrDefault(emptyList()) }
+    Tmdb.upcoming(shows.await(), watchlist.await())
+}
+
+/** Calendar: próximos episodios de tus series y estrenos en digital de tu Watchlist (TMDB). */
 @Composable
 fun CalendarScreen(nav: NavController) {
+    var entries by remember { mutableStateOf(Cache.calendar) }
+    var failed by remember { mutableStateOf(false) }
+    var toast by remember { mutableStateOf<String?>(null) }
+    val scope = rememberCoroutineScope()
+
+    LaunchedEffect(Unit) {
+        if (!Tmdb.configured) return@LaunchedEffect
+        runCatching { loadCalendar() }
+            .onSuccess { entries = it; Cache.calendar = it }
+            .onFailure { if (entries == null) failed = true }
+    }
+    LaunchedEffect(toast) { if (toast != null) { delay(3000); toast = null } }
+
     RailScaffold(nav, Sections.CALENDAR) {
-        Column(Modifier.fillMaxSize()) {
-            ScreenHeader("Calendar")
-            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.widthIn(max = 520.dp)) {
-                    Icon(AppIcons.Calendar, contentDescription = null, modifier = Modifier.size(48.dp), tint = Accent)
-                    Spacer(Modifier.height(16.dp))
-                    Text("Próximos estrenos", color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.Bold)
-                    Spacer(Modifier.height(8.dp))
-                    Text(
-                        "Aquí verás los próximos episodios de tus series y cuándo llegan en digital " +
-                            "las películas de tu Watchlist. Muy pronto.",
-                        color = Dim,
-                        fontSize = 15.sp,
-                        lineHeight = 22.sp,
-                        textAlign = TextAlign.Center,
-                    )
+        Box(Modifier.fillMaxSize()) {
+            Column(Modifier.fillMaxSize()) {
+                ScreenHeader("Calendar")
+                Spacer(Modifier.height(10.dp))
+                val list = entries
+                when {
+                    !Tmdb.configured -> MessageBox("Falta conectar TMDB para ver los próximos estrenos.")
+                    list == null && failed -> MessageBox("No pude cargar los próximos estrenos.")
+                    list == null -> LoadingBox()
+                    list.isEmpty() -> MessageBox("No hay estrenos próximos de tus series ni de tu Watchlist.")
+                    else -> {
+                        val days = list.groupBy { it.date }.toList()
+                        val listState = rememberLazyListState()
+                        LazyColumn(Modifier.fillMaxSize(), state = listState, contentPadding = PaddingValues(bottom = 120.dp)) {
+                            itemsIndexed(days, key = { _, d -> d.first.toString() }) { i, (date, items) ->
+                                Shelf(
+                                    dayLabel(date),
+                                    Modifier.onFocusChanged { if (it.hasFocus) scope.launch { listState.animateScrollToItem(i) } },
+                                ) {
+                                    items(items, key = { "${it.title}-${it.detail}" }) { e ->
+                                        PosterCard(
+                                            title = e.title,
+                                            subtitle = e.detail,
+                                            image = e.image,
+                                            modifier = Modifier.width(116.dp),
+                                            focus = i == 0 && e == items.first(),
+                                            onClick = {
+                                                val key = e.localKey
+                                                val movie = e.watchlistItem
+                                                when {
+                                                    key != null -> nav.navigate(Routes.detail(key))
+                                                    movie != null -> scope.launch {
+                                                        if (!openFromWatchlist(movie, nav)) toast = "“${e.title}” aún no está en tu servidor."
+                                                    }
+                                                }
+                                            },
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
             }
+            toast?.let { ToastPill(it, Modifier.align(Alignment.BottomCenter)) }
         }
     }
 }
