@@ -133,7 +133,6 @@ data class HomeUser(
     val locked: Boolean get() = isProtected || hasPassword
 }
 
-@Serializable
 /** Una fila de pósters (secciones Movies / Series). */
 data class RowData(
     val key: String,
@@ -142,6 +141,7 @@ data class RowData(
     val landscape: Boolean = false,
 )
 
+@Serializable
 data class HomeData(
     val deck: List<Item>,
     val libraries: List<Directory>,
