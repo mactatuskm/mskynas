@@ -31,3 +31,8 @@
 - Fases acordadas: 1) lenguaje visual ✔ 2) detalle completo (reparto, "Más como este",
   versiones) 3) reproductor (saltar intro/créditos con marcadores de Plex, audio/subtítulos,
   versiones) 4) descubrimiento local (Porque viste…, Top 10, filas por tema).
+- Autoactualización (`data/Updater.kt` + `ui/UpdateDialog.kt`): al abrir la app consulta
+  `api.github.com/repos/mactatuskm/mskynas/releases/latest`; si `build-N` > `BuildConfig.VERSION_CODE`
+  ofrece actualizar, descarga `mskynas.apk` al caché y abre el instalador con un FileProvider.
+  Las notas que ve el usuario son el mensaje del commit: escribirlos en español, claros y para él.
+  Requiere el permiso "Instalar apps desconocidas" para mskynas (se pide la primera vez).

@@ -28,7 +28,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -40,6 +39,7 @@ import androidx.tv.material3.Icon
 import androidx.tv.material3.Surface
 import androidx.tv.material3.Text
 import com.mskynas.tv.data.Plex
+import com.mskynas.tv.data.Updater
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -56,10 +56,6 @@ fun SettingsScreen(nav: NavController) {
     var selected by remember { mutableIntStateOf(0) }
     var toast by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
-    val context = LocalContext.current
-    val version = remember {
-        runCatching { context.packageManager.getPackageInfo(context.packageName, 0).versionName }.getOrNull() ?: "?"
-    }
 
     LaunchedEffect(toast) {
         if (toast != null) {
@@ -121,7 +117,22 @@ fun SettingsScreen(nav: NavController) {
                             }
                             else -> {
                                 SectionLabel("ACERCA DE")
-                                SettingRow("Versión", "mskynas para Fire TV", value = version) {}
+                                SettingRow("Versión", "mskynas para Fire TV", value = Updater.currentVersion) {}
+                                SettingRow(
+                                    "Buscar actualizaciones",
+                                    "Revisa en GitHub si hay una versión más nueva.",
+                                ) {
+                                    scope.launch {
+                                        toast = "Buscando…"
+                                        val update = Updater.check()
+                                        if (update != null) {
+                                            toast = null
+                                            Updater.pending = update
+                                        } else {
+                                            toast = "Ya tienes la versión más reciente"
+                                        }
+                                    }
+                                }
                                 SettingRow("Código", "github.com/mactatuskm/mskynas") {}
                             }
                         }

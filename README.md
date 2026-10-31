@@ -19,7 +19,16 @@ https://github.com/mactatuskm/mskynas/releases/latest/download/mskynas.apk
 Primera vez en una TV: activa *Ajustes → Mi Fire TV → Opciones de desarrollador →
 Instalar apps desconocidas → Downloader*.
 
-## Cómo se actualiza
+## Actualizaciones automáticas
+
+Al abrir la app, revisa en GitHub si hay una versión nueva. Si la hay, muestra las novedades
+y ofrece **Actualizar**: la descarga y abre el instalador de Fire TV. También está en
+*Ajustes → Acerca de → Buscar actualizaciones*.
+
+La primera vez, Fire TV pedirá permitir que mskynas instale apps
+(*Ajustes → Mi Fire TV → Opciones de desarrollador → Instalar apps desconocidas*).
+
+## Cómo se publica una versión
 
 Cada cambio que llega a la rama `main` dispara una compilación automática en GitHub
 (pestaña **Actions**). Al terminar, se publica una nueva versión en **Releases** con el
@@ -49,7 +58,8 @@ app/src/main/java/com/mskynas/tv/
     ├── HomeScreen.kt      Inicio
     ├── LibraryScreen.kt   Biblioteca, colecciones y cuadrícula de pósters
     ├── DetailScreen.kt    Detalle de película o serie
-    └── SettingsScreen.kt  Ajustes
+    ├── SettingsScreen.kt  Ajustes
+    └── UpdateDialog.kt    Ventana de "Hay una versión nueva"
 ```
 
 ## Compilar en Android Studio (opcional)

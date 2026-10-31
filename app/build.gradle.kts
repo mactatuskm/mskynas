@@ -49,6 +49,8 @@ android {
     }
     buildFeatures {
         compose = true
+        // BuildConfig.VERSION_CODE: con él se compara contra la última versión en GitHub.
+        buildConfig = true
     }
     lint {
         abortOnError = false

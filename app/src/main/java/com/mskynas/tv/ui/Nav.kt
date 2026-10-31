@@ -4,6 +4,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
@@ -12,7 +13,9 @@ import androidx.navigation.compose.rememberNavController
 import com.mskynas.tv.data.Cache
 import com.mskynas.tv.data.Item
 import com.mskynas.tv.data.Plex
+import com.mskynas.tv.data.Updater
 import com.mskynas.tv.player.PlayerActivity
+import kotlinx.coroutines.delay
 
 object Routes {
     const val LOGIN = "login"
@@ -72,6 +75,18 @@ fun AppNav() {
             Plex.session.serverUri == null -> Routes.SERVERS
             else -> Routes.HOME
         }
+    }
+
+    // Al abrir la app, revisa en GitHub si hay versión nueva (una vez por sesión).
+    LaunchedEffect(Unit) {
+        if (!Updater.checkedThisSession) {
+            Updater.checkedThisSession = true
+            delay(2500) // primero que cargue el inicio
+            Updater.check()?.let { Updater.pending = it }
+        }
+    }
+    Updater.pending?.let { update ->
+        UpdateDialog(update, onDismiss = { Updater.pending = null })
     }
 
     NavHost(
