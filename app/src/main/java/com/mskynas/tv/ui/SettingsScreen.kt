@@ -39,6 +39,7 @@ import androidx.tv.material3.Icon
 import androidx.tv.material3.Surface
 import androidx.tv.material3.Text
 import com.mskynas.tv.data.Plex
+import com.mskynas.tv.data.Tmdb
 import com.mskynas.tv.data.Updater
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -110,6 +111,11 @@ fun SettingsScreen(nav: NavController) {
                             else -> {
                                 SectionLabel("ACERCA DE")
                                 SettingRow("Versión", "mskynas para Fire TV", value = Updater.currentVersion) {}
+                                SettingRow(
+                                    "Calendar (TMDB)",
+                                    "Fuente de los próximos estrenos.",
+                                    value = if (Tmdb.configured) "Conectado" else "Sin conectar",
+                                ) {}
                                 SettingRow(
                                     "Buscar actualizaciones",
                                     "Revisa en GitHub si hay una versión más nueva.",
