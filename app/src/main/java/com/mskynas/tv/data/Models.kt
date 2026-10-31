@@ -13,15 +13,6 @@ data class Container(
     val size: Int = 0,
     @SerialName("Metadata") val metadata: List<Item> = emptyList(),
     @SerialName("Directory") val directories: List<Directory> = emptyList(),
-    @SerialName("Hub") val hubs: List<Hub> = emptyList(),
-)
-
-/** Grupo de resultados (búsqueda). */
-@Serializable
-data class Hub(
-    val type: String = "",
-    val title: String = "",
-    @SerialName("Metadata") val metadata: List<Item> = emptyList(),
 )
 
 /** Una biblioteca del servidor (Películas, Series...). */
@@ -62,7 +53,6 @@ data class Item(
     val viewedLeafCount: Int? = null,
     val childCount: Int? = null,
     val rating: Double? = null,
-    val addedAt: Long? = null,
     val audienceRating: Double? = null,
     @SerialName("Media") val media: List<Media> = emptyList(),
     @SerialName("Genre") val genres: List<Tag> = emptyList(),
@@ -136,30 +126,6 @@ data class HomeUser(
     /** Pide PIN para entrar. */
     val locked: Boolean get() = isProtected || hasPassword
 }
-
-/** Pestañas del inicio. */
-enum class HomeTab(val label: String) {
-    FOR_YOU("Para ti"),
-    MOVIES("Películas"),
-    SHOWS("Series"),
-    LIST("Mi lista"),
-}
-
-/** Una fila del inicio. `local = false` para títulos de la Watchlist de plex.tv. */
-data class RowData(
-    val key: String,
-    val title: String,
-    val items: List<Item>,
-    val landscape: Boolean = false,
-    val local: Boolean = true,
-)
-
-/** Lo que muestra una pestaña: el carrusel de arriba y sus filas. */
-data class TabContent(
-    val carousel: List<Item>,
-    val rows: List<RowData>,
-    val localCarousel: Boolean = true,
-)
 
 data class HomeData(
     val deck: List<Item>,

@@ -67,7 +67,7 @@ fun LibraryScreen(sectionKey: String, nav: NavController) {
         }
     }
 
-    RailScaffold(nav, Sections.EXPLORE) {
+    RailScaffold(nav, Sections.library(sectionKey)) {
         Column(Modifier.fillMaxSize().padding(top = 36.dp)) {
             Row(Modifier.padding(start = ContentStart, end = 48.dp), verticalAlignment = Alignment.CenterVertically) {
                 Text(

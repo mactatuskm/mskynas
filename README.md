@@ -60,7 +60,6 @@ app/src/main/java/com/mskynas/tv/
     ├── DetailScreen.kt    Detalle de película o serie
     ├── ProfilesScreen.kt  "¿Quién está viendo?" y teclado de PIN
     ├── Dialogs.kt         Ventanas comunes (confirmar salida, etc.)
-    ├── BrowseScreens.kt   Explorar, Colecciones y Buscar
     ├── SettingsScreen.kt  Ajustes
     └── UpdateDialog.kt    Ventana de "Hay una versión nueva"
 ```

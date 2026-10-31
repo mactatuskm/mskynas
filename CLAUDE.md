@@ -43,13 +43,3 @@
   pasa directo al inicio. El avatar del perfil aparece en la barra lateral para cambiarlo.
 - Atrás en el inicio: el primero lleva el foco a la barra lateral; el siguiente pregunta
   "¿Salir de mskynas?" (`RailScaffold`).
-- Proceso de diseño acordado: pantalla por pantalla, primero maqueta (lienzo "mskynas · Inicio")
-  y luego la app; no pasar a la siguiente pantalla hasta que la actual quede bien.
-- Inicio = maqueta A "Pestañas" (referencia: Disney+): carrusel de destacados a pantalla completa
-  (logo, etiqueta, clasificación, datos, sinopsis, REPRODUCIR / Mi lista / Detalles, puntos;
-  izquierda/derecha en los botones extremos cambian de diapositiva; avanza solo cada 9 s con el foco
-  ahí); pestañas Para ti / Películas / Series / Mi lista arriba (filtran carrusel y filas). Medidas:
-  px de la maqueta a 1080p ÷ 2 = dp. Menú lateral: Perfil, Buscar, Inicio, Explorar (catálogo por
-  biblioteca), Colecciones (todas), Ajustes. Arriba se descubre, a la izquierda se navega.
-- Tipografía de la maqueta: Figtree. Aún no integrada (no se pudo descargar desde este entorno);
-  la app usa la fuente del sistema.

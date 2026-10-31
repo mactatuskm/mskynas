@@ -17,12 +17,6 @@ object Cache {
     val collections = HashMap<String, List<Item>>()
     val collectionItems = HashMap<String, List<Item>>()
 
-    /** Contenido de cada pestaña del inicio. */
-    val tabs = HashMap<HomeTab, TabContent>()
-
-    /** Todas las colecciones de todas las bibliotecas. */
-    var allCollections: List<Item>? = null
-
     /** Metadatos completos (logo, géneros, calificación) para el hero. */
     val meta = HashMap<String, Item>()
 
@@ -39,6 +33,5 @@ object Cache {
         home = null
         titles.clear(); library.clear(); collections.clear(); collectionItems.clear()
         meta.clear(); lastFocus.clear(); season.clear()
-        tabs.clear(); allCollections = null
     }
 }
