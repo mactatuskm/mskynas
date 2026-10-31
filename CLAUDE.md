@@ -7,7 +7,7 @@
 - Alcance: Continuar viendo, Bibliotecas + Colecciones, Watchlist, detalle, reproductor.
   Nada social ni contenido en línea de Plex.
 - Stack: Kotlin, Compose for TV (androidx.tv:tv-material), Media3 ExoPlayer, OkHttp,
-  kotlinx.serialization, Coil. Sin ViewModels: estado en Compose + `Cache` en memoria.
+  kotlinx.serialization, Coil. Sin ViewModels: estado en Compose + `Cache` en memoria + `Store` en disco.
 - Reproducción: Direct Play primero; si ExoPlayer falla, transcodificación HLS del servidor
   (`Plex.hlsUrl`). El progreso se reporta con `/:/timeline` y `/:/scrobble`.
 - Compilación: GitHub Actions (`.github/workflows/build.yml`) compila cada push a `main`
@@ -43,3 +43,9 @@
   pasa directo al inicio. El avatar del perfil aparece en la barra lateral para cambiarlo.
 - Atrás en el inicio: el primero lleva el foco a la barra lateral; el siguiente pregunta
   "¿Salir de mskynas?" (`RailScaffold`).
+- Rendimiento del inicio: `Store` (data/Store.kt) guarda en disco el último `HomeData` (por servidor
+  y perfil) y la lista de perfiles; al abrir la app se muestran al instante y se refrescan en segundo
+  plano. La Watchlist (plex.tv) se carga aparte y nunca bloquea el inicio. Coil usa caché en disco
+  de 300 MB con `respectCacheHeaders(false)` (MainActivity). Peticiones a plex.tv con timeouts cortos.
+- Se probó un inicio estilo Disney+ (carrusel + pestañas) y al dueño no le gustó: se revirtió.
+  El inicio actual es el de la fase 1 (hero dinámico + filas). Él diseñará el inicio en Illustrator.

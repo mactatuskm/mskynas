@@ -48,6 +48,7 @@ import coil.compose.AsyncImage
 import com.mskynas.tv.data.Cache
 import com.mskynas.tv.data.HomeUser
 import com.mskynas.tv.data.Plex
+import com.mskynas.tv.data.Store
 import kotlinx.coroutines.launch
 
 /** ¿Es el perfil que ya está activo? Si nunca se eligió, el activo es el de la cuenta principal. */
@@ -62,7 +63,10 @@ private fun isActive(u: HomeUser): Boolean {
  */
 @Composable
 fun ProfilesScreen(nav: NavController) {
-    var users by remember { mutableStateOf(Cache.profiles.takeIf { it.size > 1 }) }
+    var users by remember {
+        if (Cache.profiles.isEmpty()) Cache.profiles = Store.loadProfiles()
+        mutableStateOf(Cache.profiles.takeIf { it.size > 1 })
+    }
     var pinFor by remember { mutableStateOf<HomeUser?>(null) }
     var pinError by remember { mutableStateOf<String?>(null) }
     var status by remember { mutableStateOf<String?>(null) }
@@ -77,9 +81,11 @@ fun ProfilesScreen(nav: NavController) {
             list != null && list.size > 1 -> {
                 users = list
                 Cache.profiles = list
+                Store.saveProfiles(list)
             }
             list != null -> {
                 Cache.profiles = list
+                Store.saveProfiles(list)
                 goHome()
             }
             users == null -> goHome() // sin red hacia plex.tv: no bloquear la app

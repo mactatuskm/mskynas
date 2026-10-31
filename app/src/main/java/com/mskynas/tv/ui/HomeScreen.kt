@@ -34,6 +34,7 @@ import com.mskynas.tv.data.Directory
 import com.mskynas.tv.data.HomeData
 import com.mskynas.tv.data.Item
 import com.mskynas.tv.data.Plex
+import com.mskynas.tv.data.Store
 import com.mskynas.tv.data.episodeLabel
 import com.mskynas.tv.data.isEpisode
 import com.mskynas.tv.data.isFullyWatched
@@ -41,46 +42,62 @@ import com.mskynas.tv.data.posterPath
 import com.mskynas.tv.data.progress
 import com.mskynas.tv.data.showTitle
 import com.mskynas.tv.data.unwatchedCount
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 private const val SCREEN = "home"
 private val HeroHeight = 262.dp
 private val LandscapeWidth = 208.dp
 private val PosterWidth = 116.dp
 
-private suspend fun loadHome(): HomeData = coroutineScope {
+/**
+ * Todo lo que sale de tu servidor, en paralelo. La Watchlist (plex.tv, por internet)
+ * va aparte para que nunca retrase el inicio.
+ */
+private suspend fun loadHome(keepWatchlist: List<Item>): HomeData = coroutineScope {
     val librariesJob = async { Plex.sections() }
     val deck = async { runCatching { Plex.onDeck() }.getOrDefault(emptyList()) }
-    val watchlist = async { runCatching { Plex.watchlist() }.getOrDefault(emptyList()) }
     val libraries = librariesJob.await()
     val recent = libraries.map { dir ->
         async { dir to runCatching { Plex.recentlyAdded(dir.key) }.getOrDefault(emptyList()) }
     }.awaitAll()
-    HomeData(deck.await(), libraries, watchlist.await(), recent)
+    HomeData(deck.await(), libraries, keepWatchlist, recent)
 }
 
 @Composable
 fun HomeScreen(nav: NavController) {
-    var data by remember { mutableStateOf(Cache.home) }
+    var data by remember { mutableStateOf(Cache.home ?: Store.loadHome()?.also { Cache.home = it }) }
     var failure by remember { mutableStateOf<String?>(null) }
     var attempt by remember { mutableIntStateOf(0) }
     var toast by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
 
-    // Muestra lo guardado al instante y refresca en segundo plano.
+    // Muestra lo guardado (memoria o disco) al instante y refresca en segundo plano.
     LaunchedEffect(attempt, Plex.playbackTick) {
         failure = null
-        val result = runCatching { loadHome() }
-            .recoverCatching { if (Plex.reconnect()) loadHome() else throw it }
+        val keep = data?.watchlist.orEmpty()
+        val result = runCatching { loadHome(keep) }
+            .recoverCatching { if (Plex.reconnect()) loadHome(keep) else throw it }
         result.onSuccess {
             data = it
             Cache.home = it
         }.onFailure {
             if (data == null) failure = "No pude conectar con tu servidor Plex."
+        }
+        // La Watchlist llega cuando llegue, sin bloquear lo demás.
+        if (result.isSuccess) {
+            val list = runCatching { Plex.watchlist() }.getOrNull()
+            val current = data
+            if (list != null && current != null) {
+                data = current.copy(watchlist = list)
+                Cache.home = data
+            }
+            data?.let { withContext(Dispatchers.IO) { Store.saveHome(it) } }
         }
     }
 

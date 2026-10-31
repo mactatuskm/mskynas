@@ -54,6 +54,12 @@ object Plex {
         .readTimeout(30, TimeUnit.SECONDS)
         .build()
 
+    /** Para plex.tv (Watchlist): si internet va lento, no se queda esperando 30 s. */
+    private val cloud = http.newBuilder()
+        .connectTimeout(4, TimeUnit.SECONDS)
+        .readTimeout(8, TimeUnit.SECONDS)
+        .build()
+
     private val quick = http.newBuilder()
         .connectTimeout(3, TimeUnit.SECONDS)
         .readTimeout(4, TimeUnit.SECONDS)
@@ -109,7 +115,7 @@ object Plex {
 
     /** Perfiles de la cuenta. Si la cuenta no usa Plex Home, devuelve uno solo (o ninguno). */
     suspend fun homeUsers(): List<HomeUser> {
-        val element = json.parseToJsonElement(call("https://plex.tv/api/v2/home/users", session.accountToken))
+        val element = json.parseToJsonElement(call("https://plex.tv/api/v2/home/users", session.accountToken, client = cloud))
         val array = when (element) {
             is JsonArray -> element
             is JsonObject -> element["users"] as? JsonArray ?: JsonArray(emptyList())
@@ -177,7 +183,9 @@ object Plex {
         return json.decodeFromString<Envelope>(call(uri + path, session.serverToken)).container
     }
 
-    suspend fun onDeck(): List<Item> = pms("/library/onDeck").metadata
+    /** Continuar viendo: nunca caben más de unas decenas en la fila. */
+    suspend fun onDeck(): List<Item> =
+        pms("/library/onDeck?X-Plex-Container-Start=0&X-Plex-Container-Size=30").metadata
 
     suspend fun sections(): List<Directory> =
         pms("/library/sections").directories.filter { it.type == "movie" || it.type == "show" }
@@ -217,7 +225,12 @@ object Plex {
         for (host in hosts) {
             val result = runCatching {
                 json.decodeFromString<Envelope>(
-                    call("$host/library/sections/watchlist/all?includeCollections=1&includeExternalMedia=1", session.userToken)
+                    call(
+                        "$host/library/sections/watchlist/all?includeCollections=1&includeExternalMedia=1" +
+                            "&X-Plex-Container-Start=0&X-Plex-Container-Size=50",
+                        session.userToken,
+                        client = cloud,
+                    )
                 ).container.metadata
             }
             if (result.isSuccess) return result.getOrThrow()

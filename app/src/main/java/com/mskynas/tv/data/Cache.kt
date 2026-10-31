@@ -29,6 +29,7 @@ object Cache {
     /** Temporada elegida por serie. */
     val season = HashMap<String, String>()
 
+    /** Al cambiar de perfil: lo del perfil nuevo se lee del disco si ya existe. */
     fun clear() {
         home = null
         titles.clear(); library.clear(); collections.clear(); collectionItems.clear()

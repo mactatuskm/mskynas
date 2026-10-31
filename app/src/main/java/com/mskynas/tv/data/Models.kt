@@ -127,6 +127,7 @@ data class HomeUser(
     val locked: Boolean get() = isProtected || hasPassword
 }
 
+@Serializable
 data class HomeData(
     val deck: List<Item>,
     val libraries: List<Directory>,

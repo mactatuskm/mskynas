@@ -13,6 +13,7 @@ import androidx.navigation.compose.rememberNavController
 import com.mskynas.tv.data.Cache
 import com.mskynas.tv.data.Item
 import com.mskynas.tv.data.Plex
+import com.mskynas.tv.data.Store
 import com.mskynas.tv.data.Updater
 import com.mskynas.tv.player.PlayerActivity
 import kotlinx.coroutines.delay
@@ -52,6 +53,7 @@ fun NavController.goSection(route: String) {
 fun NavController.logout() {
     Plex.session.clear()
     Cache.clear()
+    Store.clear()
     navigate(Routes.LOGIN) { popUpTo(graph.id) { inclusive = true } }
 }
 
