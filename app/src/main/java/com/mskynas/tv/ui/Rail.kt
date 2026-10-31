@@ -50,11 +50,12 @@ import androidx.tv.material3.Text
 import com.mskynas.tv.data.Cache
 import com.mskynas.tv.data.Plex
 
-/** Claves de sección para marcar en la barra lateral dónde estás. */
+/** Claves de sección para marcar en la barra lateral dónde estás (mapa de pantallas). */
 object Sections {
     const val HOME = "home"
-    const val SETTINGS = "settings"
-    fun library(key: String) = "lib-$key"
+    const val MOVIES = "movie"
+    const val SERIES = "show"
+    const val CALENDAR = "calendar"
 }
 
 /**
@@ -104,10 +105,14 @@ private fun SideRail(
         animationSpec = tween(160),
         label = "rail",
     )
-    val libraries = Cache.home?.libraries.orEmpty()
-    val hasSelected = current == Sections.HOME || current == Sections.SETTINGS ||
-        libraries.any { Sections.library(it.key) == current }
-    val showProfile = Cache.profiles.size > 1
+    var menuOpen by remember { mutableStateOf(false) }
+    val entries = listOf(
+        Triple(Sections.HOME, AppIcons.Home, "Home"),
+        Triple(Sections.MOVIES, AppIcons.Movie, "Movies"),
+        Triple(Sections.SERIES, AppIcons.Tv, "Series"),
+        Triple(Sections.CALENDAR, AppIcons.Calendar, "Calendar"),
+    )
+    val hasSelected = entries.any { it.first == current }
 
     Column(
         Modifier
@@ -129,63 +134,39 @@ private fun SideRail(
             .padding(horizontal = 12.dp, vertical = 28.dp),
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
-        LogoMark()
+        // Tu avatar arriba: abre el menú del perfil.
+        val (title, thumb) = currentProfile()
+        RailItem(
+            icon = null,
+            label = title,
+            selected = false,
+            expanded = expanded,
+            requester = null,
+            avatar = thumb to title,
+        ) { menuOpen = true }
         Spacer(Modifier.weight(1f))
 
-        fun req(section: String) = if (section == current) selectedRequester else null
-
-        RailItem(AppIcons.Home, "Inicio", current == Sections.HOME, expanded, req(Sections.HOME)) {
-            nav.goHome()
-        }
-        libraries.forEach { dir ->
-            val section = Sections.library(dir.key)
-            RailItem(
-                if (dir.type == "movie") AppIcons.Movie else AppIcons.Tv,
-                dir.title,
-                current == section,
-                expanded,
-                req(section),
-            ) {
-                Cache.titles[dir.key] = dir.title
-                nav.goSection(Routes.library(dir.key))
+        entries.forEach { (section, icon, label) ->
+            RailItem(icon, label, current == section, expanded, if (section == current) selectedRequester else null) {
+                when (section) {
+                    Sections.HOME -> nav.goHome()
+                    Sections.CALENDAR -> nav.goSection(Routes.CALENDAR)
+                    else -> nav.goSection(Routes.section(section))
+                }
             }
         }
-
-        Spacer(Modifier.weight(1f))
-        if (showProfile) {
-            val title = Plex.session.profileTitle
-                ?: Cache.profiles.firstOrNull { it.admin }?.title
-                ?: "Perfil"
-            val thumb = Plex.session.profileThumb
-                ?: Cache.profiles.firstOrNull { it.admin }?.thumb
-            RailItem(
-                icon = null,
-                label = title,
-                selected = false,
-                expanded = expanded,
-                requester = null,
-                avatar = thumb to title,
-            ) {
-                nav.navigate(Routes.PROFILES)
-            }
-        }
-        RailItem(AppIcons.Settings, "Ajustes", current == Sections.SETTINGS, expanded, req(Sections.SETTINGS)) {
-            nav.goSection(Routes.SETTINGS)
-        }
+        Spacer(Modifier.weight(1.4f))
     }
+
+    if (menuOpen) ProfileMenu(nav, onDismiss = { menuOpen = false })
 }
 
-@Composable
-private fun LogoMark() {
-    Box(
-        Modifier
-            .padding(start = 4.dp)
-            .size(40.dp)
-            .background(Accent, RoundedCornerShape(10.dp)),
-        contentAlignment = Alignment.Center,
-    ) {
-        Icon(AppIcons.Play, contentDescription = "mskynas", modifier = Modifier.size(24.dp), tint = Color.White)
-    }
+/** Nombre y foto del perfil activo (o de la cuenta principal). */
+fun currentProfile(): Pair<String, String?> {
+    val admin = Cache.profiles.firstOrNull { it.admin }
+    val title = Plex.session.profileTitle ?: admin?.title ?: "Perfil"
+    val thumb = Plex.session.profileThumb ?: admin?.thumb
+    return title to thumb
 }
 
 @Composable

@@ -24,7 +24,13 @@ object Routes {
     const val HOME = "home"
     const val SETTINGS = "settings"
     const val PROFILES = "profiles"
-    fun library(key: String) = "library/$key"
+    const val CALENDAR = "calendar"
+    const val WATCHLIST = "watchlist"
+    const val LISTS = "lists"
+    const val HISTORY = "history"
+    /** Movies ("movie") o Series ("show"). */
+    fun section(type: String) = "section/$type"
+    fun list(key: String) = "list/$key"
     fun collection(key: String) = "collection/$key"
     fun detail(key: String) = "detail/$key"
 }
@@ -118,8 +124,15 @@ fun AppNav() {
         composable(Routes.PROFILES) { ProfilesScreen(nav) }
         composable(Routes.HOME) { HomeScreen(nav) }
         composable(Routes.SETTINGS) { SettingsScreen(nav) }
-        composable("library/{key}") { entry ->
-            LibraryScreen(entry.arguments?.getString("key").orEmpty(), nav)
+        composable("section/{type}") { entry ->
+            SectionScreen(entry.arguments?.getString("type") ?: "movie", nav)
+        }
+        composable(Routes.CALENDAR) { CalendarScreen(nav) }
+        composable(Routes.WATCHLIST) { WatchlistScreen(nav) }
+        composable(Routes.LISTS) { ListsScreen(nav) }
+        composable(Routes.HISTORY) { HistoryScreen(nav) }
+        composable("list/{key}") { entry ->
+            ListItemsScreen(entry.arguments?.getString("key").orEmpty(), nav)
         }
         composable("collection/{key}") { entry ->
             CollectionScreen(entry.arguments?.getString("key").orEmpty(), nav)

@@ -17,6 +17,11 @@ object Cache {
     val collections = HashMap<String, List<Item>>()
     val collectionItems = HashMap<String, List<Item>>()
 
+    /** Filas de "Recommended" por sección (movie / show). */
+    val recommended = HashMap<String, List<RowData>>()
+    var playlists: List<Item>? = null
+    var history: List<Item>? = null
+
     /** Metadatos completos (logo, géneros, calificación) para el hero. */
     val meta = HashMap<String, Item>()
 
@@ -34,5 +39,6 @@ object Cache {
         home = null
         titles.clear(); library.clear(); collections.clear(); collectionItems.clear()
         meta.clear(); lastFocus.clear(); season.clear()
+        recommended.clear(); playlists = null; history = null
     }
 }

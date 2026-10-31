@@ -196,6 +196,27 @@ object Plex {
     suspend fun recentlyAdded(key: String, count: Int = 24): List<Item> =
         pms("/library/sections/$key/all?sort=addedAt:desc&X-Plex-Container-Start=0&X-Plex-Container-Size=$count").metadata
 
+    /** Una biblioteca con orden o filtros (p. ej. "sort=audienceRating:desc"), solo los primeros. */
+    suspend fun sectionQuery(key: String, query: String, count: Int = 24): List<Item> =
+        pms("/library/sections/$key/all?$query&X-Plex-Container-Start=0&X-Plex-Container-Size=$count").metadata
+
+    /** Lists: las listas de video (playlists) del perfil. */
+    suspend fun playlists(): List<Item> =
+        pms("/playlists?playlistType=video").metadata.filter { it.playlistType == null || it.playlistType == "video" }
+
+    suspend fun playlistItems(ratingKey: String): List<Item> =
+        pms("/playlists/$ratingKey/items").metadata
+
+    /**
+     * History: lo que vio este perfil, lo más reciente primero (sin repetir títulos).
+     * En el servidor, la cuenta principal es la 1 y los perfiles usan su id de Plex.
+     */
+    suspend fun history(): List<Item> {
+        val id = session.profileId?.takeIf { pid -> Cache.profiles.none { it.id == pid && it.admin } } ?: 1L
+        return pms("/status/sessions/history/all?sort=viewedAt:desc&accountID=$id&X-Plex-Container-Start=0&X-Plex-Container-Size=120")
+            .metadata.distinctBy { it.ratingKey }
+    }
+
     suspend fun sectionCollections(key: String): List<Item> =
         pms("/library/sections/$key/collections").metadata
 

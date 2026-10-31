@@ -52,6 +52,12 @@ data class Item(
     val leafCount: Int? = null,
     val viewedLeafCount: Int? = null,
     val childCount: Int? = null,
+    val addedAt: Long? = null,
+    /** Historial: cuándo se vio. */
+    val viewedAt: Long? = null,
+    /** Listas (playlists): imagen compuesta de sus títulos. */
+    val composite: String? = null,
+    val playlistType: String? = null,
     val rating: Double? = null,
     val audienceRating: Double? = null,
     @SerialName("Media") val media: List<Media> = emptyList(),
@@ -128,6 +134,14 @@ data class HomeUser(
 }
 
 @Serializable
+/** Una fila de pósters (secciones Movies / Series). */
+data class RowData(
+    val key: String,
+    val title: String,
+    val items: List<Item>,
+    val landscape: Boolean = false,
+)
+
 data class HomeData(
     val deck: List<Item>,
     val libraries: List<Directory>,
@@ -150,6 +164,7 @@ val Item.posterPath: String?
     get() = when (type) {
         "episode" -> grandparentThumb ?: parentThumb ?: thumb
         "season" -> thumb ?: parentThumb
+        "playlist" -> composite ?: thumb
         else -> thumb
     }
 

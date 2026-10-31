@@ -46,8 +46,7 @@ import kotlinx.coroutines.launch
 private class Category(val title: String, val icon: ImageVector)
 
 private val categories = listOf(
-    Category("Servidor", AppIcons.Tv),
-    Category("Cuenta", AppIcons.Bookmark),
+    Category("Servidor", AppIcons.Server),
     Category("Acerca de", AppIcons.Settings),
 )
 
@@ -64,7 +63,7 @@ fun SettingsScreen(nav: NavController) {
         }
     }
 
-    RailScaffold(nav, Sections.SETTINGS) {
+    RailScaffold(nav, current = "") {
         Box(Modifier.fillMaxSize()) {
             Column(Modifier.fillMaxSize().padding(start = ContentStart, top = 40.dp, end = 48.dp)) {
                 Text("Ajustes", color = Color.White, fontSize = 30.sp, fontWeight = FontWeight.Bold)
@@ -91,9 +90,9 @@ fun SettingsScreen(nav: NavController) {
                                 SectionLabel("SERVIDOR")
                                 SettingRow(
                                     "Servidor Plex",
-                                    "El servidor del que se cargan tus bibliotecas.",
+                                    "Para cambiarlo, usa Switch Server en el menú de tu perfil.",
                                     value = Plex.session.serverName ?: "—",
-                                ) { nav.navigate(Routes.SERVERS) }
+                                ) {}
                                 SettingRow(
                                     "Reconectar",
                                     "Busca de nuevo la mejor conexión (útil si cambió la IP del servidor).",
@@ -107,13 +106,6 @@ fun SettingsScreen(nav: NavController) {
                                     "Dirección",
                                     Plex.session.serverUri ?: "—",
                                 ) {}
-                            }
-                            1 -> {
-                                SectionLabel("CUENTA")
-                                SettingRow(
-                                    "Cerrar sesión",
-                                    "Tendrás que volver a vincular esta TV en plex.tv/link.",
-                                ) { nav.logout() }
                             }
                             else -> {
                                 SectionLabel("ACERCA DE")

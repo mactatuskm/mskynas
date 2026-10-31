@@ -43,7 +43,7 @@
   Se listan con `plex.tv/api/v2/home/users` usando el token de la cuenta principal
   (`Session.accountToken`); al elegir uno, `POST plex.tv/api/home/users/{id}/switch[?pin=]` da su
   token y con él `api/v2/resources` da su acceso al servidor. Si la cuenta tiene un solo perfil,
-  pasa directo al inicio. El avatar del perfil aparece en la barra lateral para cambiarlo.
+  pasa directo al inicio.
 - Atrás en el inicio: el primero lleva el foco a la barra lateral; el siguiente pregunta
   "¿Salir de mskynas?" (`RailScaffold`).
 - Rendimiento del inicio: `Store` (data/Store.kt) guarda en disco el último `HomeData` (por servidor
@@ -60,3 +60,12 @@
   avatar + nombre + "ADMIN · servidor"): Switch Profile, Watchlist, Lists, History (historial de lo
   visto), Settings, Switch Server, Sign Out. Desde cualquier póster: Detalle → Reproductor
   (diseño por confirmar).
+- Implementación del mapa: barra lateral = avatar (abre `ui/ProfileMenu.kt`), Home, Movies, Series,
+  Calendar. Movies/Series = `SectionScreen` (`ui/SectionScreens.kt`, ruta `section/{movie|show}`) con
+  pestañas Recommended (filas solo del servidor: continuar, recientes, mejor calificadas, por ver),
+  Browse (cuadrícula de la biblioteca) y Collections; si hay varias bibliotecas del tipo, se elige con
+  botones. Menú del perfil: Switch Profile, Watchlist, Lists (playlists de video), History
+  (`/status/sessions/history/all`, accountID 1 para la cuenta principal), Settings (Servidor, Acerca
+  de), Switch Server, Sign Out (con confirmación). Etiquetas en inglés como en el mapa.
+  Calendar es por ahora un aviso de "muy pronto": falta la API key de TMDB.
+  El diseño visual de todas estas pantallas es provisional hasta que el dueño entregue sus diseños.
