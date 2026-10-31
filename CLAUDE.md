@@ -53,8 +53,10 @@
 - Se probó un inicio estilo Disney+ (carrusel + pestañas) y al dueño no le gustó: se revirtió.
   El inicio actual es el de la fase 1 (hero dinámico + filas). Él diseñará el inicio en Illustrator.
 - Estructura base de la app = artifact "Mapa de pantallas mskynas" (decisión del dueño):
-  Selección de perfil → Home. Desde Home, secciones del menú: Movies (Recommended, Browse,
-  Collections), Series (Recommended, Browse, Collections), For you (Lists, Watchlist) y Calendar
-  (próximos estrenos: episodios de sus series y estreno digital de películas de su Watchlist, vía
-  TMDB), Cambiar perfil (desde el avatar del menú, vuelve a Selección de perfil) y Ajustes (Servidor,
-  Cuenta, Acerca de). Desde cualquier póster: Detalle → Reproductor (diseño por confirmar).
+  Selección de perfil → Home. Desde Home: Movies (Recommended, Browse, Collections), Series
+  (Recommended, Browse, Collections), Calendar (próximos estrenos: episodios de sus series y estreno
+  digital de películas de su Watchlist, vía TMDB) y For you (contenido por definir).
+  Menú del perfil (al elegir el avatar; referencia: menú de perfil de otra app de Plex con encabezado
+  avatar + nombre + "ADMIN · servidor"): Switch Profile, Watchlist, Lists, History (historial de lo
+  visto), Settings, Switch Server, Sign Out. Desde cualquier póster: Detalle → Reproductor
+  (diseño por confirmar).
