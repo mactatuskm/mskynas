@@ -23,6 +23,9 @@ object Routes {
     const val HOME = "home"
     const val SETTINGS = "settings"
     const val PROFILES = "profiles"
+    const val SEARCH = "search"
+    const val EXPLORE = "explore"
+    const val COLLECTIONS = "collections"
     fun library(key: String) = "library/$key"
     fun collection(key: String) = "collection/$key"
     fun detail(key: String) = "detail/$key"
@@ -116,6 +119,9 @@ fun AppNav() {
         composable(Routes.PROFILES) { ProfilesScreen(nav) }
         composable(Routes.HOME) { HomeScreen(nav) }
         composable(Routes.SETTINGS) { SettingsScreen(nav) }
+        composable(Routes.SEARCH) { SearchScreen(nav) }
+        composable(Routes.EXPLORE) { ExploreScreen(nav) }
+        composable(Routes.COLLECTIONS) { AllCollectionsScreen(nav) }
         composable("library/{key}") { entry ->
             LibraryScreen(entry.arguments?.getString("key").orEmpty(), nav)
         }

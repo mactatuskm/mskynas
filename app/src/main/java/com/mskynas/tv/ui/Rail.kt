@@ -50,19 +50,27 @@ import androidx.tv.material3.Text
 import com.mskynas.tv.data.Cache
 import com.mskynas.tv.data.Plex
 
-/** Claves de sección para marcar en la barra lateral dónde estás. */
+/** Claves de sección para marcar en el menú dónde estás. */
 object Sections {
     const val HOME = "home"
+    const val SEARCH = "search"
+    const val EXPLORE = "explore"
+    const val COLLECTIONS = "collections"
     const val SETTINGS = "settings"
-    fun library(key: String) = "lib-$key"
 }
 
 /**
- * Envuelve una pantalla con la barra lateral flotando a la izquierda.
- * En el inicio, Atrás primero lleva el foco a la barra; si ya está ahí, pregunta si quieres salir.
+ * Envuelve una pantalla con el menú lateral flotando a la izquierda.
+ * En el inicio, Atrás primero deja que la pantalla lo use (`onBack`, p. ej. volver arriba),
+ * luego lleva el foco al menú y, si ya está ahí, pregunta si quieres salir.
  */
 @Composable
-fun RailScaffold(nav: NavController, current: String, content: @Composable () -> Unit) {
+fun RailScaffold(
+    nav: NavController,
+    current: String,
+    onBack: (() -> Boolean)? = null,
+    content: @Composable () -> Unit,
+) {
     val selectedRequester = remember { FocusRequester() }
     var railFocused by remember { mutableStateOf(false) }
     var askExit by remember { mutableStateOf(false) }
@@ -73,6 +81,7 @@ fun RailScaffold(nav: NavController, current: String, content: @Composable () ->
             askExit = true
             return@BackHandler
         }
+        if (onBack?.invoke() == true) return@BackHandler
         runCatching { selectedRequester.requestFocus() }
     }
 
@@ -91,6 +100,8 @@ fun RailScaffold(nav: NavController, current: String, content: @Composable () ->
     }
 }
 
+private class RailEntry(val section: String, val icon: ImageVector, val label: String, val go: () -> Unit)
+
 @Composable
 private fun SideRail(
     nav: NavController,
@@ -100,13 +111,18 @@ private fun SideRail(
 ) {
     var expanded by remember { mutableStateOf(false) }
     val width by animateDpAsState(
-        targetValue = if (expanded) 240.dp else RailCollapsed,
+        targetValue = if (expanded) 230.dp else RailCollapsed,
         animationSpec = tween(160),
         label = "rail",
     )
-    val libraries = Cache.home?.libraries.orEmpty()
-    val hasSelected = current == Sections.HOME || current == Sections.SETTINGS ||
-        libraries.any { Sections.library(it.key) == current }
+    val entries = listOf(
+        RailEntry(Sections.SEARCH, AppIcons.Search, "Buscar") { nav.goSection(Routes.SEARCH) },
+        RailEntry(Sections.HOME, AppIcons.Home, "Inicio") { nav.goHome() },
+        RailEntry(Sections.EXPLORE, AppIcons.Grid, "Explorar") { nav.goSection(Routes.EXPLORE) },
+        RailEntry(Sections.COLLECTIONS, AppIcons.Collections, "Colecciones") { nav.goSection(Routes.COLLECTIONS) },
+        RailEntry(Sections.SETTINGS, AppIcons.Settings, "Ajustes") { nav.goSection(Routes.SETTINGS) },
+    )
+    val hasSelected = entries.any { it.section == current }
     val showProfile = Cache.profiles.size > 1
 
     Column(
@@ -115,49 +131,24 @@ private fun SideRail(
             .width(width)
             .background(
                 Brush.horizontalGradient(
-                    if (expanded) listOf(Bg, Bg.copy(alpha = 0.94f))
-                    else listOf(Bg.copy(alpha = 0.92f), Bg.copy(alpha = 0f))
+                    if (expanded) listOf(Bg, Bg.copy(alpha = 0.95f))
+                    else listOf(Bg.copy(alpha = 0.7f), Bg.copy(alpha = 0f))
                 )
             )
             .onFocusChanged {
                 expanded = it.hasFocus
                 onFocusChange(it.hasFocus)
             }
-            // Al entrar a la barra, el foco cae en la sección actual (no en la más cercana).
+            // Al entrar al menú, el foco cae en la sección actual (no en la más cercana).
             .focusProperties { enter = { if (hasSelected) selectedRequester else FocusRequester.Default } }
             .focusGroup()
-            .padding(horizontal = 12.dp, vertical = 28.dp),
-        verticalArrangement = Arrangement.spacedBy(6.dp),
+            .padding(horizontal = 10.dp, vertical = 30.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        LogoMark()
-        Spacer(Modifier.weight(1f))
-
-        fun req(section: String) = if (section == current) selectedRequester else null
-
-        RailItem(AppIcons.Home, "Inicio", current == Sections.HOME, expanded, req(Sections.HOME)) {
-            nav.goHome()
-        }
-        libraries.forEach { dir ->
-            val section = Sections.library(dir.key)
-            RailItem(
-                if (dir.type == "movie") AppIcons.Movie else AppIcons.Tv,
-                dir.title,
-                current == section,
-                expanded,
-                req(section),
-            ) {
-                Cache.titles[dir.key] = dir.title
-                nav.goSection(Routes.library(dir.key))
-            }
-        }
-
-        Spacer(Modifier.weight(1f))
+        // Perfil arriba: tu avatar; al elegirlo vuelves a "¿Quién está viendo?".
         if (showProfile) {
-            val title = Plex.session.profileTitle
-                ?: Cache.profiles.firstOrNull { it.admin }?.title
-                ?: "Perfil"
-            val thumb = Plex.session.profileThumb
-                ?: Cache.profiles.firstOrNull { it.admin }?.thumb
+            val title = Plex.session.profileTitle ?: Cache.profiles.firstOrNull { it.admin }?.title ?: "Perfil"
+            val thumb = Plex.session.profileThumb ?: Cache.profiles.firstOrNull { it.admin }?.thumb
             RailItem(
                 icon = null,
                 label = title,
@@ -165,12 +156,21 @@ private fun SideRail(
                 expanded = expanded,
                 requester = null,
                 avatar = thumb to title,
-            ) {
-                nav.navigate(Routes.PROFILES)
-            }
+            ) { nav.navigate(Routes.PROFILES) }
+        } else {
+            LogoMark()
         }
-        RailItem(AppIcons.Settings, "Ajustes", current == Sections.SETTINGS, expanded, req(Sections.SETTINGS)) {
-            nav.goSection(Routes.SETTINGS)
+        Spacer(Modifier.height(34.dp))
+
+        entries.forEach { e ->
+            RailItem(
+                icon = e.icon,
+                label = e.label,
+                selected = e.section == current,
+                expanded = expanded,
+                requester = if (e.section == current) selectedRequester else null,
+                onClick = e.go,
+            )
         }
     }
 }
@@ -179,12 +179,12 @@ private fun SideRail(
 private fun LogoMark() {
     Box(
         Modifier
-            .padding(start = 4.dp)
-            .size(40.dp)
-            .background(Accent, RoundedCornerShape(10.dp)),
+            .padding(start = 7.dp)
+            .size(30.dp)
+            .background(Accent, RoundedCornerShape(8.dp)),
         contentAlignment = Alignment.Center,
     ) {
-        Icon(AppIcons.Play, contentDescription = "mskynas", modifier = Modifier.size(24.dp), tint = Color.White)
+        Icon(AppIcons.Play, contentDescription = "mskynas", modifier = Modifier.size(18.dp), tint = Color.White)
     }
 }
 
@@ -202,12 +202,12 @@ private fun RailItem(
         onClick = onClick,
         modifier = Modifier
             .fillMaxWidth()
-            .height(48.dp)
+            .height(44.dp)
             .let { if (requester != null) it.focusRequester(requester) else it },
         shape = ClickableSurfaceDefaults.shape(shape = RoundedCornerShape(50)),
         colors = ClickableSurfaceDefaults.colors(
-            containerColor = if (selected) Color.White.copy(alpha = 0.12f) else Color.Transparent,
-            contentColor = if (selected) Color.White else Dim,
+            containerColor = Color.Transparent,
+            contentColor = if (selected) Color.White else Color.White.copy(alpha = 0.6f),
             focusedContainerColor = Color.White,
             focusedContentColor = Bg,
         ),
@@ -218,16 +218,16 @@ private fun RailItem(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             if (avatar != null) {
-                Avatar(avatar.second, avatar.first, Modifier.size(26.dp), initialSize = 12.sp)
+                Avatar(avatar.second, avatar.first, Modifier.size(30.dp).padding(0.dp), initialSize = 13.sp)
             } else if (icon != null) {
-                Icon(icon, contentDescription = label, modifier = Modifier.size(24.dp))
+                Icon(icon, contentDescription = label, modifier = Modifier.size(20.dp))
             }
             if (expanded) {
                 Spacer(Modifier.width(16.dp))
                 Text(
                     label,
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Medium,
+                    fontSize = 15.sp,
+                    fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )

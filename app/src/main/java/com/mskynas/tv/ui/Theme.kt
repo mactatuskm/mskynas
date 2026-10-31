@@ -26,8 +26,8 @@ val Faint = Color(0xFF6C6F85)       // Texto terciario
 val Gold = Color(0xFFF5C518)        // Estrella de calificación
 
 // ---- Medidas ----
-val RailCollapsed = 72.dp           // Ancho de la barra lateral cerrada
-val ContentStart = 96.dp            // Margen izquierdo del contenido (barra + aire)
+val RailCollapsed = 64.dp           // Ancho de la barra lateral cerrada
+val ContentStart = 92.dp            // Margen izquierdo del contenido (barra + aire)
 
 @Composable
 fun AppTheme(content: @Composable () -> Unit) {

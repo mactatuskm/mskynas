@@ -81,11 +81,13 @@ object Plex {
         token: String?,
         post: Boolean = false,
         client: OkHttpClient = http,
+        put: Boolean = false,
     ): String = withContext(Dispatchers.IO) {
         val builder = Request.Builder().url(url)
         baseHeaders().forEach { (k, v) -> builder.header(k, v) }
         if (token != null) builder.header("X-Plex-Token", token)
         if (post) builder.post(ByteArray(0).toRequestBody())
+        if (put) builder.put(ByteArray(0).toRequestBody())
         client.newCall(builder.build()).execute().use { response ->
             if (!response.isSuccessful) throw IOException("HTTP ${response.code}")
             response.body?.string().orEmpty()
@@ -187,6 +189,33 @@ object Plex {
     /** Lo más reciente de una biblioteca (solo los primeros, para una fila del inicio). */
     suspend fun recentlyAdded(key: String, count: Int = 24): List<Item> =
         pms("/library/sections/$key/all?sort=addedAt:desc&X-Plex-Container-Start=0&X-Plex-Container-Size=$count").metadata
+
+    /** Consulta de una biblioteca con orden o filtros (p. ej. "sort=audienceRating:desc"). */
+    suspend fun sectionQuery(key: String, query: String, count: Int = 24): List<Item> =
+        pms("/library/sections/$key/all?$query&X-Plex-Container-Start=0&X-Plex-Container-Size=$count").metadata
+
+    /** Búsqueda en todo el servidor: solo películas y series. */
+    suspend fun search(query: String): List<Item> =
+        pms("/hubs/search?query=${Uri.encode(query)}&limit=24").hubs
+            .filter { it.type == "movie" || it.type == "show" }
+            .flatMap { it.metadata }
+
+    /** Episodio a ver de una serie: el que va a medias o el primero sin ver. */
+    suspend fun nextEpisode(showKey: String): Item? {
+        val episodes = pms("/library/metadata/$showKey/allLeaves").metadata
+        return episodes.firstOrNull { (it.viewOffset ?: 0L) > 0 }
+            ?: episodes.firstOrNull { (it.viewCount ?: 0) == 0 }
+            ?: episodes.firstOrNull()
+    }
+
+    /** Agrega o quita de la Watchlist de plex.tv ("Mi lista"). */
+    suspend fun setWatchlisted(item: Item, add: Boolean): Boolean {
+        val id = item.guid?.takeIf { it.startsWith("plex://") }?.substringAfterLast('/') ?: return false
+        val action = if (add) "addToWatchlist" else "removeFromWatchlist"
+        return runCatching {
+            call("https://discover.provider.plex.tv/actions/$action?ratingKey=$id", session.userToken, put = true)
+        }.isSuccess
+    }
 
     suspend fun sectionCollections(key: String): List<Item> =
         pms("/library/sections/$key/collections").metadata
