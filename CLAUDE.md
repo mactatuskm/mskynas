@@ -28,8 +28,9 @@
   de íconos completa, para no inflar el APK).
 - Solo contenido del servidor: nada de tendencias externas ni Overseerr por ahora. La Watchlist de
   plex.tv sí se usa. Única excepción decidida por el dueño: la sección Calendar usa TMDB para listar
-  fechas de estreno de las películas y episodios que ya están en sus bibliotecas (cruzando por los
-  guid `tmdb://` de Plex). TMDB no se usa para metadatos, pósters ni el inicio.
+  próximos episodios de las series de sus bibliotecas y la fecha de estreno en digital (TMDB
+  release_dates, tipo 4) de las películas de su Watchlist; se cruza por los guid `tmdb://` de Plex.
+  País de las fechas: México, con Estados Unidos como respaldo. TMDB no se usa para metadatos, pósters ni el inicio.
 - Fases acordadas: 1) lenguaje visual ✔ 2) detalle completo (reparto, "Más como este",
   versiones) 3) reproductor (saltar intro/créditos con marcadores de Plex, audio/subtítulos,
   versiones) 4) descubrimiento local (Porque viste…, Top 10, filas por tema).
