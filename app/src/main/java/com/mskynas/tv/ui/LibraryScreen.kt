@@ -84,9 +84,9 @@ fun PosterGrid(
     local: Boolean = true,
     subtitle: ((Item) -> String?)? = null,
     titleOf: ((Item) -> String)? = null,
-    onClick: ((Item) -> Unit)? = null,
     modifier: Modifier = Modifier.fillMaxSize(),
     state: LazyGridState = rememberLazyGridState(),
+    onClick: ((Item) -> Unit)? = null,
 ) {
     val saved = Cache.lastFocus[screen]
     val target = if (saved != null && list.any { it.ratingKey == saved }) saved else list.firstOrNull()?.ratingKey
