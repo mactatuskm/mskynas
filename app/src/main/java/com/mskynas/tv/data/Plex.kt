@@ -87,11 +87,13 @@ object Plex {
         token: String?,
         post: Boolean = false,
         client: OkHttpClient = http,
+        put: Boolean = false,
     ): String = withContext(Dispatchers.IO) {
         val builder = Request.Builder().url(url)
         baseHeaders().forEach { (k, v) -> builder.header(k, v) }
         if (token != null) builder.header("X-Plex-Token", token)
         if (post) builder.post(ByteArray(0).toRequestBody())
+        if (put) builder.put(ByteArray(0).toRequestBody())
         client.newCall(builder.build()).execute().use { response ->
             if (!response.isSuccessful) throw IOException("HTTP ${response.code}")
             response.body?.string().orEmpty()
@@ -191,6 +193,47 @@ object Plex {
         pms("/library/sections").directories.filter { it.type == "movie" || it.type == "show" }
 
     suspend fun sectionItems(key: String): List<Item> = pms("/library/sections/$key/all").metadata
+
+    /** Catálogo con orden ("titleSort", "addedAt:desc"…) y, si se pide, solo lo no visto. */
+    suspend fun sectionSorted(key: String, sort: String, unwatchedOnly: Boolean): List<Item> =
+        pms("/library/sections/$key/all?sort=$sort" + if (unwatchedOnly) "&unwatched=1" else "").metadata
+
+    /**
+     * Las filas del Home de Plex, tal como las configuras en "Administrar recomendaciones"
+     * (incluye las colecciones que promueves al inicio, como las de Kometa).
+     * Si el servidor no responde a /hubs/promoted, usa /hubs.
+     */
+    suspend fun homeHubs(sections: List<Directory>): List<Hub> {
+        val ids = sections.joinToString(",") { it.key }
+        val promoted = runCatching {
+            pms("/hubs/promoted?contentDirectoryID=$ids&pinnedContentDirectoryID=$ids&includeMeta=1&count=24").hubs
+        }.getOrNull()
+        val hubs = promoted?.takeIf { list -> list.any { it.metadata.isNotEmpty() } }
+            ?: pms("/hubs?count=24&includeMeta=1").hubs
+        return hubs.filter { hub -> hub.metadata.any { it.type in videoTypes } }
+    }
+
+    private val videoTypes = setOf("movie", "show", "episode", "season", "collection")
+
+    /** Marcar como visto / no visto. */
+    suspend fun setWatched(ratingKey: String, watched: Boolean) {
+        val action = if (watched) "scrobble" else "unscrobble"
+        call("${session.serverUri}/:/$action?identifier=com.plexapp.plugins.library&key=$ratingKey", session.serverToken)
+        playbackTick += 1
+    }
+
+    /**
+     * Elige audio o subtítulos para un archivo (Plex lo recuerda para la próxima vez).
+     * subtitleId = 0 quita los subtítulos.
+     */
+    suspend fun selectStreams(partId: Long, audioId: Long? = null, subtitleId: Long? = null) {
+        val q = buildList {
+            audioId?.let { add("audioStreamID=$it") }
+            subtitleId?.let { add("subtitleStreamID=$it") }
+            add("allParts=1")
+        }.joinToString("&")
+        call("${session.serverUri}/library/parts/$partId?$q", session.serverToken, put = true)
+    }
 
     /** Lo más reciente de una biblioteca (solo los primeros, para una fila del inicio). */
     suspend fun recentlyAdded(key: String, count: Int = 24): List<Item> =

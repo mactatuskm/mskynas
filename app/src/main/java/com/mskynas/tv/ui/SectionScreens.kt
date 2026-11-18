@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -18,6 +19,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -102,7 +104,7 @@ fun SectionScreen(type: String, nav: NavController) {
     val libs = libraries
     val selected = libs?.firstOrNull { it.key == libKey } ?: libs?.firstOrNull()
 
-    RailScaffold(nav, type) {
+    AppScaffold(nav, type) {
         Column(Modifier.fillMaxSize()) {
             ScreenHeader(title) {
                 SectionTab.entries.forEachIndexed { i, t ->
@@ -128,7 +130,7 @@ fun SectionScreen(type: String, nav: NavController) {
                 else -> key(tab, selected?.key) {
                     when (tab) {
                         SectionTab.RECOMMENDED -> Recommended(type, libs, nav)
-                        SectionTab.BROWSE -> LibraryGrid(selected!!.key, collections = false, nav = nav)
+                        SectionTab.BROWSE -> BrowseGrid(selected!!.key, type, nav)
                         SectionTab.COLLECTIONS -> LibraryGrid(selected!!.key, collections = true, nav = nav)
                     }
                 }
@@ -245,6 +247,148 @@ private fun LibraryGrid(libKey: String, collections: Boolean, nav: NavController
     }
 }
 
+/** Orden del catálogo (como en la referencia: "Sort · Date Added Newest"). */
+private enum class BrowseSort(val label: String) {
+    ADDED("Date Added Newest"),
+    TITLE("Title A–Z"),
+    YEAR("Year Newest"),
+    RATING("Rating Highest"),
+}
+
+private fun sortKey(m: Item): String = (m.titleSort ?: m.title).trim().uppercase(Locale.ROOT)
+
+private fun sorted(list: List<Item>, sort: BrowseSort): List<Item> = when (sort) {
+    BrowseSort.ADDED -> list.sortedByDescending { it.addedAt ?: 0L }
+    BrowseSort.TITLE -> list.sortedBy { sortKey(it) }
+    BrowseSort.YEAR -> list.sortedByDescending { it.year ?: 0 }
+    BrowseSort.RATING -> list.sortedByDescending { it.score ?: 0.0 }
+}
+
+/** Letra del salto A–Z: "#" para lo que empieza con número o símbolo. */
+private fun jumpLetter(m: Item): Char = sortKey(m).firstOrNull()?.takeIf { it in 'A'..'Z' } ?: '#'
+
+private val sortMemory = HashMap<String, BrowseSort>()
+private val unwatchedMemory = HashMap<String, Boolean>()
+
+/** Browse: todo el catálogo con Sort, Filter (sin ver), Shuffle y salto A–Z (referencia: Silo). */
+@Composable
+private fun BrowseGrid(libKey: String, type: String, nav: NavController) {
+    var all by remember(libKey) { mutableStateOf(Cache.library[libKey]) }
+    var failed by remember(libKey) { mutableStateOf(false) }
+    var sort by remember(libKey) { mutableStateOf(sortMemory[libKey] ?: BrowseSort.ADDED) }
+    var unwatched by remember(libKey) { mutableStateOf(unwatchedMemory[libKey] ?: false) }
+    val gridState = rememberLazyGridState()
+    val scope = rememberCoroutineScope()
+
+    LaunchedEffect(libKey, Plex.playbackTick) {
+        runCatching { Plex.sectionItems(libKey) }
+            .onSuccess { all = it; Cache.library[libKey] = it }
+            .onFailure { if (all == null) failed = true }
+    }
+
+    val source = all
+    if (source == null) {
+        if (failed) MessageBox("No pude cargar esta biblioteca.") else LoadingBox()
+        return
+    }
+    // Ordenar y filtrar en la TV: sin volver a pedir el catálogo al servidor.
+    val list = remember(source, sort, unwatched) {
+        sorted(if (unwatched) source.filterNot { it.isFullyWatched } else source, sort)
+    }
+
+    Column(Modifier.fillMaxSize()) {
+        Row(
+            Modifier.padding(start = ContentStart, end = 48.dp, bottom = 2.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            ActionButton("Sort · ${sort.label}", onClick = {
+                sort = BrowseSort.entries[(sort.ordinal + 1) % BrowseSort.entries.size]
+                sortMemory[libKey] = sort
+                scope.launch { gridState.scrollToItem(0) }
+            })
+            ActionButton(if (unwatched) "Filter · Unwatched" else "Filter · All", onClick = {
+                unwatched = !unwatched
+                unwatchedMemory[libKey] = unwatched
+                scope.launch { gridState.scrollToItem(0) }
+            })
+            if (list.isNotEmpty()) {
+                ActionButton("Shuffle", icon = AppIcons.Play, onClick = {
+                    // Películas: reproduce una al azar (de preferencia sin ver). Series: abre una al azar.
+                    val pool = list.filterNot { it.isFullyWatched }.ifEmpty { list }
+                    val pick = pool.random()
+                    if (type == "movie") play(nav, pick.ratingKey, resume = false) else openItem(nav, pick)
+                })
+            }
+            Spacer(Modifier.width(8.dp))
+            Text("${list.size} títulos", color = Faint, fontSize = 11.sp)
+        }
+
+        when {
+            source.isEmpty() -> MessageBox("Esta biblioteca está vacía.")
+            list.isEmpty() -> MessageBox("Ya viste todo en esta biblioteca.")
+            else -> Row(Modifier.fillMaxSize()) {
+                PosterGrid(
+                    list,
+                    screen = "grid-$libKey-false",
+                    nav = nav,
+                    modifier = Modifier.weight(1f).fillMaxHeight(),
+                    state = gridState,
+                )
+                // Salto A–Z: solo tiene sentido con el orden por título.
+                if (sort == BrowseSort.TITLE) {
+                    val firstIndex = remember(list) {
+                        val map = LinkedHashMap<Char, Int>()
+                        list.forEachIndexed { i, m -> map.getOrPut(jumpLetter(m)) { i } }
+                        map
+                    }
+                    JumpBar(firstIndex) { i -> scope.launch { gridState.scrollToItem(i) } }
+                }
+            }
+        }
+    }
+}
+
+/** Columna de letras a la derecha; las que no tienen títulos se ven apagadas y no se enfocan. */
+@Composable
+private fun JumpBar(firstIndex: Map<Char, Int>, onJump: (Int) -> Unit) {
+    val letters = listOf('#') + ('A'..'Z').toList()
+    Column(
+        Modifier.fillMaxHeight().padding(end = 14.dp, top = 8.dp, bottom = 12.dp),
+        verticalArrangement = Arrangement.SpaceEvenly,
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        letters.forEach { c ->
+            val index = firstIndex[c]
+            if (index == null) {
+                Text(c.toString(), color = Color.White.copy(alpha = 0.18f), fontSize = 9.sp, fontWeight = FontWeight.Bold)
+            } else {
+                JumpLetter(c, onClick = { onJump(index) })
+            }
+        }
+    }
+}
+
+@Composable
+private fun JumpLetter(c: Char, onClick: () -> Unit) {
+    androidx.tv.material3.Surface(
+        onClick = onClick,
+        modifier = Modifier.size(18.dp),
+        shape = androidx.tv.material3.ClickableSurfaceDefaults.shape(shape = androidx.compose.foundation.shape.CircleShape),
+        colors = androidx.tv.material3.ClickableSurfaceDefaults.colors(
+            containerColor = Color.Transparent,
+            contentColor = Color.White.copy(alpha = 0.7f),
+            focusedContainerColor = Color.White,
+            focusedContentColor = Bg,
+        ),
+        scale = androidx.tv.material3.ClickableSurfaceDefaults.scale(focusedScale = 1.2f),
+    ) {
+        Box(Modifier.size(18.dp), contentAlignment = Alignment.Center) {
+            Text(c.toString(), fontSize = 9.sp, fontWeight = FontWeight.Bold)
+        }
+    }
+}
+
 // ---------- Calendar ----------
 
 private val dayFormat = DateTimeFormatter.ofPattern("EEEE d 'de' MMMM", Locale("es", "MX"))
@@ -283,7 +427,7 @@ fun CalendarScreen(nav: NavController) {
     }
     LaunchedEffect(toast) { if (toast != null) { delay(3000); toast = null } }
 
-    RailScaffold(nav, Sections.CALENDAR) {
+    AppScaffold(nav, Sections.CALENDAR) {
         Box(Modifier.fillMaxSize()) {
             Column(Modifier.fillMaxSize()) {
                 ScreenHeader("Calendar")
@@ -351,7 +495,7 @@ fun WatchlistScreen(nav: NavController) {
     LaunchedEffect(Unit) { runCatching { Plex.watchlist() }.onSuccess { list = it } }
     LaunchedEffect(toast) { if (toast != null) { delay(3000); toast = null } }
 
-    RailScaffold(nav, current = "") {
+    AppScaffold(nav, current = "") {
         Box(Modifier.fillMaxSize()) {
             Column(Modifier.fillMaxSize()) {
                 ScreenHeader("Watchlist")
@@ -383,7 +527,7 @@ fun ListsScreen(nav: NavController) {
             .onFailure { if (list == null) failed = true }
     }
 
-    RailScaffold(nav, current = "") {
+    AppScaffold(nav, current = "") {
         Column(Modifier.fillMaxSize()) {
             ScreenHeader("Lists")
             Spacer(Modifier.height(10.dp))
@@ -412,7 +556,7 @@ fun ListItemsScreen(listKey: String, nav: NavController) {
             .onFailure { if (list == null) failed = true }
     }
 
-    RailScaffold(nav, current = "") {
+    AppScaffold(nav, current = "") {
         Column(Modifier.fillMaxSize()) {
             ScreenHeader(Cache.titles[listKey] ?: "Lista")
             Spacer(Modifier.height(10.dp))
@@ -438,7 +582,7 @@ fun HistoryScreen(nav: NavController) {
             .onFailure { if (list == null) failed = true }
     }
 
-    RailScaffold(nav, current = "") {
+    AppScaffold(nav, current = "") {
         Column(Modifier.fillMaxSize()) {
             ScreenHeader("History")
             Spacer(Modifier.height(10.dp))

@@ -21,6 +21,8 @@ import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.ui.PlayerView
 import com.mskynas.tv.data.Item
+import com.mskynas.tv.data.selectedAudio
+import com.mskynas.tv.data.selectedSubtitle
 import com.mskynas.tv.data.Plex
 import com.mskynas.tv.data.Session
 import kotlinx.coroutines.Job
@@ -102,6 +104,14 @@ class PlayerActivity : ComponentActivity() {
             .build()
         player = p
         view.player = p
+
+        // Respeta el audio y los subtítulos que elegiste en el detalle (Plex los guarda por archivo).
+        val audioLang = m.selectedAudio?.let { it.languageTag ?: it.languageCode }
+        val subLang = m.selectedSubtitle?.let { it.languageTag ?: it.languageCode }
+        p.trackSelectionParameters = p.trackSelectionParameters.buildUpon().apply {
+            if (audioLang != null) setPreferredAudioLanguage(audioLang)
+            if (subLang != null) setPreferredTextLanguage(subLang)
+        }.build()
 
         val direct = Plex.directUrl(m)
         if (direct != null) {

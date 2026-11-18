@@ -76,7 +76,7 @@ fun Modifier.initialFocus(enabled: Boolean): Modifier {
 fun Modifier.trackFocus(screen: String, key: String): Modifier =
     onFocusChanged { if (it.isFocused || it.hasFocus) Cache.lastFocus[screen] = key }
 
-/** Tarjeta base: al enfocarse crece un poco, se marca con borde blanco y brilla en morado. */
+/** Tarjeta base (estilo Silo): al enfocarse crece y se marca con un borde blanco fino. */
 @Composable
 fun TileCard(
     onClick: () -> Unit,
@@ -89,12 +89,12 @@ fun TileCard(
         shape = CardDefaults.shape(shape = TileShape),
         colors = CardDefaults.colors(containerColor = Panel),
         border = CardDefaults.border(
-            focusedBorder = Border(border = BorderStroke(3.dp, Color.White), shape = TileShape)
+            focusedBorder = Border(border = BorderStroke(2.dp, Color.White), shape = TileShape)
         ),
         glow = CardDefaults.glow(
-            focusedGlow = Glow(elevationColor = Accent.copy(alpha = 0.55f), elevation = 14.dp)
+            focusedGlow = Glow(elevationColor = Color.Black.copy(alpha = 0.6f), elevation = 18.dp)
         ),
-        scale = CardDefaults.scale(focusedScale = 1.05f),
+        scale = CardDefaults.scale(focusedScale = 1.07f),
     ) {
         Box(Modifier.fillMaxSize(), content = content)
     }
@@ -149,34 +149,34 @@ fun PosterCard(
                     Modifier
                         .align(Alignment.BottomStart)
                         .fillMaxWidth()
-                        .padding(horizontal = 8.dp, vertical = 8.dp),
+                        .padding(horizontal = 0.dp, vertical = 0.dp),
                 )
             }
             when {
                 watched -> CircleBadge(Modifier.align(Alignment.TopEnd)) {
-                    Icon(AppIcons.Check, contentDescription = "Visto", modifier = Modifier.size(14.dp), tint = Color.White)
+                    Icon(AppIcons.Check, contentDescription = "Visto", modifier = Modifier.size(12.dp), tint = Bg)
                 }
                 badge > 0 -> CircleBadge(Modifier.align(Alignment.TopEnd)) {
                     Text(
                         if (badge > 99) "99+" else badge.toString(),
-                        color = Color.White,
-                        fontSize = 11.sp,
+                        color = Bg,
+                        fontSize = 10.sp,
                         fontWeight = FontWeight.Bold,
                     )
                 }
             }
         }
-        Spacer(Modifier.height(8.dp))
+        Spacer(Modifier.height(7.dp))
         Text(
             title,
-            color = if (focused) Color.White else Color.White.copy(alpha = 0.9f),
-            fontSize = 13.sp,
-            fontWeight = if (focused) FontWeight.SemiBold else FontWeight.Medium,
+            color = Color.White,
+            fontSize = 12.sp,
+            fontWeight = FontWeight.SemiBold,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
         )
         if (!subtitle.isNullOrBlank()) {
-            Text(subtitle, color = Dim, fontSize = 11.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(subtitle, color = Dim, fontSize = 10.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
     }
 }
@@ -185,9 +185,9 @@ fun PosterCard(
 private fun CircleBadge(modifier: Modifier, content: @Composable BoxScope.() -> Unit) {
     Box(
         modifier
-            .padding(7.dp)
-            .defaultMinSize(minWidth = 24.dp, minHeight = 24.dp)
-            .background(Accent, CircleShape)
+            .padding(6.dp)
+            .defaultMinSize(minWidth = 20.dp, minHeight = 20.dp)
+            .background(Color.White, CircleShape)
             .padding(horizontal = 5.dp),
         contentAlignment = Alignment.Center,
         content = content,
@@ -198,37 +198,43 @@ private fun CircleBadge(modifier: Modifier, content: @Composable BoxScope.() -> 
 fun ProgressBar(progress: Float, modifier: Modifier = Modifier) {
     Box(
         modifier
-            .height(4.dp)
-            .background(Color.White.copy(alpha = 0.25f), RoundedCornerShape(50))
+            .height(3.dp)
+            .background(Color.White.copy(alpha = 0.22f))
     ) {
         Box(
             Modifier
                 .fillMaxWidth(progress.coerceIn(0.02f, 1f))
                 .fillMaxHeight()
-                .background(Accent, RoundedCornerShape(50))
+                .background(Color.White)
         )
     }
 }
 
-/** Fila con título y desplazamiento horizontal. */
+/** Fila con título (y un ícono opcional, como ▶ en Continuar viendo) y desplazamiento horizontal. */
 @Composable
 fun Shelf(
     title: String,
     modifier: Modifier = Modifier,
+    icon: ImageVector? = null,
     content: LazyListScope.() -> Unit,
 ) {
     Column(modifier) {
-        Text(
-            title,
-            modifier = Modifier.padding(start = ContentStart, bottom = 2.dp),
-            color = Color.White,
-            fontSize = 18.sp,
-            fontWeight = FontWeight.SemiBold,
-        )
+        Row(Modifier.padding(start = ContentStart), verticalAlignment = Alignment.CenterVertically) {
+            if (icon != null) {
+                Box(
+                    Modifier.size(17.dp).background(Color.White, CircleShape),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(icon, contentDescription = null, modifier = Modifier.size(11.dp), tint = Bg)
+                }
+                Spacer(Modifier.width(8.dp))
+            }
+            Text(title, color = Color.White, fontSize = 17.sp, fontWeight = FontWeight.Bold)
+        }
         LazyRow(
             state = rememberLazyListState(),
-            contentPadding = PaddingValues(start = ContentStart, end = 48.dp, top = 12.dp, bottom = 12.dp),
-            horizontalArrangement = Arrangement.spacedBy(16.dp),
+            contentPadding = PaddingValues(start = ContentStart, end = 48.dp, top = 11.dp, bottom = 14.dp),
+            horizontalArrangement = Arrangement.spacedBy(19.dp),
             content = content,
         )
     }
@@ -250,18 +256,19 @@ fun ActionButton(
         onClick = onClick,
         modifier = modifier,
         scale = ButtonDefaults.scale(focusedScale = 1.05f),
+        contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp),
         colors = ButtonDefaults.colors(
-            containerColor = if (highlighted) Accent else Color.White.copy(alpha = 0.1f),
+            containerColor = if (highlighted) Color.White.copy(alpha = 0.22f) else Chip,
             contentColor = Color.White,
             focusedContainerColor = Color.White,
             focusedContentColor = Bg,
         ),
     ) {
         if (icon != null) {
-            Icon(icon, contentDescription = null, modifier = Modifier.size(20.dp))
-            Spacer(Modifier.width(8.dp))
+            Icon(icon, contentDescription = null, modifier = Modifier.size(15.dp))
+            Spacer(Modifier.width(7.dp))
         }
-        Text(text, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
+        Text(text, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
     }
 }
 
@@ -332,11 +339,11 @@ fun ToastPill(text: String, modifier: Modifier = Modifier) {
     )
 }
 
-/** 2 h 11 min / 42 min */
+/** 2h 11m / 42m */
 fun fmtDuration(ms: Long?): String {
     if (ms == null || ms <= 0) return ""
     val minutes = ms / 60_000
-    return if (minutes >= 60) "${minutes / 60} h ${minutes % 60} min" else "$minutes min"
+    return if (minutes >= 60) "${minutes / 60}h ${minutes % 60}m" else "${minutes}m"
 }
 
 fun fmtClock(ms: Long): String {

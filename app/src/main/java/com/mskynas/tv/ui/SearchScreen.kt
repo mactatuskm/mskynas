@@ -64,7 +64,7 @@ fun SearchScreen(nav: NavController) {
         searching = false
     }
 
-    RailScaffold(nav, Sections.SEARCH) {
+    AppScaffold(nav, Sections.SEARCH) {
         Column(Modifier.fillMaxSize().padding(top = 32.dp)) {
             Row(Modifier.padding(start = ContentStart, end = 48.dp), verticalAlignment = Alignment.CenterVertically) {
                 Text("Search", color = Color.White, fontSize = 30.sp, fontWeight = FontWeight.Bold)

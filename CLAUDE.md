@@ -21,7 +21,7 @@
 - El reproductor es una Activity nativa (`player/PlayerActivity`), no Compose: dentro de
   Compose el SurfaceView quedaba tapado (audio sin imagen).
 - Dirección visual (fase 1, referencia: Zerk Play para Emby): acento morado `#7B61FF`, fondo
-  `#0A0A12`; barra lateral de íconos que se expande al enfocarla (`ui/Rail.kt`); hero dinámico
+  `#0A0A12`; (fase 1, ya reemplazada por la dirección Silo, ver abajo) barra lateral de íconos; hero dinámico
   arriba que cambia con el foco (`ui/Hero.kt`: fondo, logo "clearLogo" o título, ★, datos,
   progreso, sinopsis); tarjetas con borde blanco + brillo morado e insignias (visto / sin ver).
   Paleta y medidas en `ui/Theme.kt`. Íconos dibujados a mano en `ui/Icons.kt` (sin la librería
@@ -45,7 +45,7 @@
   token y con él `api/v2/resources` da su acceso al servidor. Si la cuenta tiene un solo perfil,
   pasa directo al inicio.
 - Atrás en el inicio: el primero lleva el foco a la barra lateral; el siguiente pregunta
-  "¿Salir de mskynas?" (`RailScaffold`).
+  "¿Salir de mskynas?" (`AppScaffold`, en `ui/TopBar.kt`). Si se está en una fila de abajo, Atrás primero regresa a la primera fila.
 - Rendimiento del inicio: `Store` (data/Store.kt) guarda en disco el último `HomeData` (por servidor
   y perfil) y la lista de perfiles; al abrir la app se muestran al instante y se refrescan en segundo
   plano. La Watchlist (plex.tv) se carga aparte y nunca bloquea el inicio. Coil usa caché en disco
@@ -72,3 +72,17 @@
   `tmdb://` con `includeGuids=1` → `/tv/{id}` next_episode_to_air. Watchlist: `/movie/{id}/release_dates`
   tipo 4 (MX, luego US); si falta el guid, búsqueda por título y año. Agrupado por día.
   El diseño visual de todas estas pantallas es provisional hasta que el dueño entregue sus diseños.
+- Rediseño estilo Silo (pedido del dueño, nov 2026; referencia: capturas de la app Silo): barra superior
+  (`ui/TopBar.kt`: logo provisional a la izquierda; búsqueda, Home, Movies, Series, Calendar al centro;
+  avatar a la derecha) en lugar de la barra lateral. Fondo neutro `#0D0D10` teñido con el color del arte
+  (`rememberTint` en `ui/Hero.kt`). Hero: logo, clasificación con contorno, calificación (IMDb/RT/TMDB),
+  datos, sinopsis, reparto e insignias de calidad (4K, DOLBY VISION, ATMOS). Medidas = capturas a 1080p ÷ 2.
+  "For You" de la referencia no se incluyó (el dueño la había descartado).
+- Home = las mismas filas del Home de Plex, en su orden, incluidas las colecciones de Kometa promovidas
+  al inicio (`Plex.homeHubs`: `/hubs/promoted` con respaldo `/hubs`). Continuar viendo en tarjetas
+  horizontales; si Plex no lo trae, se agrega con On Deck. Se guarda en `HomeData.hubs` (Store).
+- Detalle: línea VERSION / AUDIO / SUBTITLES, píldora blanca "Resume S1:E1", botones redondos
+  (reiniciar, audio, subtítulos con `Plex.selectStreams`, marcar visto con `Plex.setWatched`), temporadas
+  en píldoras y episodios "S01E01 · Título". PlayerActivity usa como idioma preferido las pistas elegidas.
+- Browse: Sort (fecha agregada, título, año, calificación), Filter (sin ver), Shuffle y salto A–Z
+  (solo con orden por título). Ordenar y filtrar se hace en la TV, sin pedir de nuevo el catálogo.

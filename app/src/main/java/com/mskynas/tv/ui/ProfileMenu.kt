@@ -61,8 +61,8 @@ fun ProfileMenu(nav: NavController, onDismiss: () -> Unit) {
         Box(Modifier.fillMaxSize()) {
             Column(
                 Modifier
-                    .align(Alignment.TopStart)
-                    .padding(start = 76.dp, top = 24.dp)
+                    .align(Alignment.TopEnd)
+                    .padding(end = ContentStart - 8.dp, top = 56.dp)
                     .width(300.dp)
                     .background(Color(0xFF1E2030), RoundedCornerShape(16.dp))
                     .padding(vertical = 14.dp)

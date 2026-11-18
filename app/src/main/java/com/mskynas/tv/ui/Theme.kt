@@ -14,20 +14,21 @@ import androidx.tv.material3.Surface
 import androidx.tv.material3.SurfaceDefaults
 import androidx.tv.material3.darkColorScheme
 
-// ---- Paleta ----
-// Cambia estos valores para ajustar el look de toda la app.
-val Bg = Color(0xFF0A0A12)          // Fondo: casi negro, ligeramente azulado
-val Panel = Color(0xFF171826)       // Tarjetas y paneles
-val PanelHi = Color(0xFF222438)     // Paneles enfocados o elevados
-val Accent = Color(0xFF7B61FF)      // Morado de acento
+// ---- Paleta (referencia: Silo) ----
+// Neutra: el color lo pone el arte de cada título (el fondo se tiñe con él).
+val Bg = Color(0xFF0D0D10)          // Fondo: casi negro neutro
+val Panel = Color(0xFF1B1B20)       // Tarjetas y paneles
+val PanelHi = Color(0xFF26262D)     // Paneles enfocados o elevados
+val Accent = Color(0xFF7B61FF)      // Morado: avatar, cursor y detalles mínimos
 val OnAccent = Color.White
-val Dim = Color(0xFFA4A7BA)         // Texto secundario
-val Faint = Color(0xFF6C6F85)       // Texto terciario
+val Dim = Color(0xFFA3A3AD)         // Texto secundario
+val Faint = Color(0xFF6E6E78)       // Texto terciario
 val Gold = Color(0xFFF5C518)        // Estrella de calificación
+val Chip = Color.White.copy(alpha = 0.12f)   // Píldoras y botones sin foco
 
-// ---- Medidas ----
-val RailCollapsed = 72.dp           // Ancho de la barra lateral cerrada
-val ContentStart = 96.dp            // Margen izquierdo del contenido (barra + aire)
+// ---- Medidas (capturas de referencia a 1080p ÷ 2 ≈ dp) ----
+val ContentStart = 46.dp            // Margen izquierdo del contenido
+val TopBarHeight = 64.dp            // Alto de la barra superior
 
 @Composable
 fun AppTheme(content: @Composable () -> Unit) {

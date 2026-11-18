@@ -64,7 +64,7 @@ fun SettingsScreen(nav: NavController) {
         }
     }
 
-    RailScaffold(nav, current = "") {
+    AppScaffold(nav, current = "") {
         Box(Modifier.fillMaxSize()) {
             Column(Modifier.fillMaxSize().padding(start = ContentStart, top = 40.dp, end = 48.dp)) {
                 Text("Ajustes", color = Color.White, fontSize = 30.sp, fontWeight = FontWeight.Bold)

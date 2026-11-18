@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
@@ -47,7 +48,7 @@ fun CollectionScreen(collectionKey: String, nav: NavController) {
             .onFailure { if (list == null) failure = "No pude cargar esta colección." }
     }
 
-    RailScaffold(nav, current = "") {
+    AppScaffold(nav, current = "") {
         Column(Modifier.fillMaxSize().padding(top = 36.dp)) {
             Text(
                 title,
@@ -84,23 +85,26 @@ fun PosterGrid(
     subtitle: ((Item) -> String?)? = null,
     titleOf: ((Item) -> String)? = null,
     onClick: ((Item) -> Unit)? = null,
+    modifier: Modifier = Modifier.fillMaxSize(),
+    state: LazyGridState = rememberLazyGridState(),
 ) {
     val saved = Cache.lastFocus[screen]
     val target = if (saved != null && list.any { it.ratingKey == saved }) saved else list.firstOrNull()?.ratingKey
 
     LazyVerticalGrid(
-        columns = GridCells.Adaptive(116.dp),
-        modifier = Modifier.fillMaxSize(),
-        state = rememberLazyGridState(),
+        // Proporción de la referencia (Silo): pósters chicos, unas nueve columnas.
+        columns = GridCells.Adaptive(96.dp),
+        modifier = modifier,
+        state = state,
         contentPadding = PaddingValues(start = ContentStart, end = 48.dp, top = 12.dp, bottom = 48.dp),
-        horizontalArrangement = Arrangement.spacedBy(18.dp),
-        verticalArrangement = Arrangement.spacedBy(22.dp),
+        horizontalArrangement = Arrangement.spacedBy(14.dp),
+        verticalArrangement = Arrangement.spacedBy(18.dp),
     ) {
         items(list, key = { it.ratingKey }) { m ->
             PosterCard(
                 title = titleOf?.invoke(m) ?: m.title,
                 subtitle = subtitle?.invoke(m) ?: gridSubtitle(m),
-                image = Plex.image(m.posterPath, 232, 348),
+                image = Plex.image(m.posterPath, 200, 300),
                 progress = if (local) m.progress else null,
                 watched = local && m.isFullyWatched,
                 badge = if (local) m.unwatchedCount else 0,
