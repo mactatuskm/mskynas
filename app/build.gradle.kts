@@ -35,7 +35,10 @@ android {
 
     buildTypes {
         release {
-            isMinifyEnabled = false
+            // R8 optimiza el código (Compose corre bastante más fluido así) y quita lo que no se usa.
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
             signingConfig = signingConfigs.getByName("home")
         }
         debug {
@@ -69,6 +72,9 @@ dependencies {
     implementation("androidx.tv:tv-material:1.0.0")
 
     implementation("androidx.activity:activity-compose:1.9.3")
+    // Instala los perfiles de arranque (de Compose y de la app) aunque el APK no venga de la tienda:
+    // Fire OS precompila esas partes y el desplazamiento no da tirones las primeras veces.
+    implementation("androidx.profileinstaller:profileinstaller:1.4.1")
     implementation("androidx.navigation:navigation-compose:2.8.5")
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.8.7")
 

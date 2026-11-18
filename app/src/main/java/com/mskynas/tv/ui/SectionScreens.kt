@@ -185,10 +185,7 @@ private fun Recommended(type: String, libs: List<Directory>, nav: NavController)
                 contentPadding = PaddingValues(bottom = 200.dp),
             ) {
                 itemsIndexed(current, key = { _, r -> r.key }) { i, row ->
-                    Shelf(
-                        row.title,
-                        Modifier.onFocusChanged { if (it.hasFocus) scope.launch { listState.animateScrollToItem(i) } },
-                    ) {
+                    Shelf(row.title) {
                         items(row.items, key = { it.ratingKey }) { m ->
                             val k = "${row.key}-${m.ratingKey}"
                             if (row.landscape) {
@@ -443,10 +440,7 @@ fun CalendarScreen(nav: NavController) {
                         val listState = rememberLazyListState()
                         LazyColumn(Modifier.fillMaxSize(), state = listState, contentPadding = PaddingValues(bottom = 120.dp)) {
                             itemsIndexed(days, key = { _, d -> d.first.toString() }) { i, (date, items) ->
-                                Shelf(
-                                    dayLabel(date),
-                                    Modifier.onFocusChanged { if (it.hasFocus) scope.launch { listState.animateScrollToItem(i) } },
-                                ) {
+                                Shelf(dayLabel(date)) {
                                     items(items, key = { "${it.title}-${it.detail}" }) { e ->
                                         PosterCard(
                                             title = e.title,

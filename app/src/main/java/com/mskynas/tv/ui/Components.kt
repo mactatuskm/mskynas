@@ -51,7 +51,6 @@ import androidx.tv.material3.ButtonDefaults
 import androidx.tv.material3.Card
 import androidx.tv.material3.CardDefaults
 import androidx.tv.material3.ExperimentalTvMaterial3Api
-import androidx.tv.material3.Glow
 import androidx.tv.material3.Icon
 import androidx.tv.material3.Text
 import coil.compose.AsyncImage
@@ -91,9 +90,7 @@ fun TileCard(
         border = CardDefaults.border(
             focusedBorder = Border(border = BorderStroke(2.dp, Color.White), shape = TileShape)
         ),
-        glow = CardDefaults.glow(
-            focusedGlow = Glow(elevationColor = Color.Black.copy(alpha = 0.6f), elevation = 18.dp)
-        ),
+        // Sin sombra al enfocar: en Fire TV dibujar sombras grandes en cada tarjeta cuesta cuadros.
         scale = CardDefaults.scale(focusedScale = 1.07f),
     ) {
         Box(Modifier.fillMaxSize(), content = content)

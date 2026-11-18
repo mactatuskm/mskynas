@@ -182,7 +182,9 @@ object Plex {
 
     private suspend fun pms(path: String): Container {
         val uri = session.serverUri ?: throw IOException("Sin servidor")
-        return json.decodeFromString<Envelope>(call(uri + path, session.serverToken)).container
+        val body = call(uri + path, session.serverToken)
+        // Leer el JSON (una biblioteca entera puede ser grande) fuera del hilo de la pantalla.
+        return withContext(Dispatchers.Default) { json.decodeFromString<Envelope>(body).container }
     }
 
     /** Continuar viendo: nunca caben más de unas decenas en la fila. */
@@ -298,14 +300,13 @@ object Plex {
         val hosts = listOf("https://discover.provider.plex.tv", "https://metadata.provider.plex.tv")
         for (host in hosts) {
             val result = runCatching {
-                json.decodeFromString<Envelope>(
-                    call(
-                        "$host/library/sections/watchlist/all?includeCollections=1&includeExternalMedia=1&includeGuids=1" +
-                            "&X-Plex-Container-Start=0&X-Plex-Container-Size=50",
-                        session.userToken,
-                        client = cloud,
-                    )
-                ).container.metadata
+                val body = call(
+                    "$host/library/sections/watchlist/all?includeCollections=1&includeExternalMedia=1&includeGuids=1" +
+                        "&X-Plex-Container-Start=0&X-Plex-Container-Size=50",
+                    session.userToken,
+                    client = cloud,
+                )
+                withContext(Dispatchers.Default) { json.decodeFromString<Envelope>(body).container.metadata }
             }
             if (result.isSuccess) return result.getOrThrow()
         }

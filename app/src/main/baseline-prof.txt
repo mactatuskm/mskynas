@@ -1,0 +1,4 @@
+# Perfil de arranque: le dice a Android que precompile todo el código de la app
+# (pantallas, tarjetas, foco y desplazamiento) en lugar de interpretarlo al principio.
+HSPLcom/mskynas/tv/**;->**(**)**
+Lcom/mskynas/tv/**;

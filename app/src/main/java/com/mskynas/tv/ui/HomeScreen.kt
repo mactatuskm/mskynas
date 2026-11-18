@@ -5,6 +5,7 @@ package com.mskynas.tv.ui
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -13,7 +14,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -25,7 +25,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.tv.material3.ExperimentalTvMaterial3Api
@@ -69,7 +69,7 @@ private suspend fun loadHome(keepWatchlist: List<Item>): HomeData = coroutineSco
 
 @Composable
 fun HomeScreen(nav: NavController) {
-    var data by remember { mutableStateOf(Cache.home ?: Store.loadHome()?.also { Cache.home = it }) }
+    var data by remember { mutableStateOf(Cache.home) }
     var failure by remember { mutableStateOf<String?>(null) }
     var attempt by remember { mutableIntStateOf(0) }
     // Sube cuando Atrás debe regresar el foco a la primera fila.
@@ -80,6 +80,13 @@ fun HomeScreen(nav: NavController) {
     // Muestra lo guardado (memoria o disco) al instante y refresca en segundo plano.
     LaunchedEffect(attempt, Plex.playbackTick) {
         failure = null
+        // Lo guardado en disco se lee fuera del hilo de la pantalla y se muestra de inmediato.
+        if (data == null) {
+            withContext(Dispatchers.IO) { Store.loadHome() }?.let {
+                data = it
+                Cache.home = it
+            }
+        }
         val keep = data?.watchlist.orEmpty()
         val result = runCatching { loadHome(keep) }
             .recoverCatching { if (Plex.reconnect()) loadHome(keep) else throw it }
@@ -151,44 +158,30 @@ private fun rowsOf(data: HomeData): List<Hub> {
     else listOf(Hub(title = "Continue Watching", hubIdentifier = "home.continue", metadata = data.deck)) + hubs
 }
 
+/** Qué está enfocado. Solo el hero lo lee: moverse entre tarjetas no recompone las filas. */
+private class HeroState {
+    var target by mutableStateOf<HeroTarget?>(null)
+}
+
 @Composable
 private fun HomeContent(data: HomeData, nav: NavController, listState: LazyListState, backToTop: Int) {
-    val rows = rowsOf(data)
-    val keys = rows.flatMap { hub -> hub.metadata.map { "${hub.hubIdentifier}-${it.ratingKey}" } }
-    val saved = Cache.lastFocus[SCREEN]
-    val target = if (saved != null && saved in keys) saved else keys.firstOrNull()
-
-    var heroTarget by remember { mutableStateOf<HeroTarget?>(null) }
-    var hero by remember { mutableStateOf<HeroInfo?>(null) }
-    LaunchedEffect(heroTarget) {
-        val t = heroTarget ?: return@LaunchedEffect
-        // Pequeña espera: al recorrer una fila rápido no se carga el fondo de cada tarjeta.
-        delay(140)
-        hero = t.quick()
-        t.full()?.let { hero = it }
+    val rows = remember(data) { rowsOf(data) }
+    // Tarjeta que recibe el foco al abrir (la última que enfocaste, si sigue ahí).
+    val target = remember(rows, backToTop) {
+        val keys = rows.flatMap { hub -> hub.metadata.map { "${hub.hubIdentifier}-${it.ratingKey}" } }
+        val saved = Cache.lastFocus[SCREEN]
+        if (saved != null && saved in keys) saved else keys.firstOrNull()
     }
+    val heroState = remember { HeroState() }
     // Antes de enfocar nada, el hero muestra el primer título.
-    LaunchedEffect(Unit) {
-        if (heroTarget == null) rows.firstOrNull()?.metadata?.firstOrNull()?.let { heroTarget = itemTarget(it) }
-    }
-    val tint = rememberTint(hero?.artTiny)
-    val scope = rememberCoroutineScope()
-
-    fun focused(k: String, m: Item) {
-        Cache.lastFocus[SCREEN] = k
-        heroTarget = itemTarget(m)
+    LaunchedEffect(rows) {
+        if (heroState.target == null) rows.firstOrNull()?.metadata?.firstOrNull()?.let { heroState.target = itemTarget(it) }
     }
 
     Box(Modifier.fillMaxSize()) {
-        Backdrop(hero?.art, tint)
+        HeroLayer(heroState)
         Column(Modifier.fillMaxSize()) {
-            HeroText(
-                hero,
-                Modifier
-                    .fillMaxWidth()
-                    .height(HeroHeight)
-                    .padding(start = ContentStart, top = TopBarHeight + 40.dp, end = 48.dp),
-            )
+            Spacer(Modifier.height(HeroHeight))
             key(backToTop) {
                 LazyColumn(
                     modifier = Modifier.fillMaxWidth().weight(1f),
@@ -196,45 +189,87 @@ private fun HomeContent(data: HomeData, nav: NavController, listState: LazyListS
                     // Espacio al final para que la última fila también pueda subir bajo el hero.
                     contentPadding = PaddingValues(bottom = 260.dp),
                 ) {
-                    itemsIndexed(rows, key = { _, hub -> hub.hubIdentifier.ifBlank { hub.title } }) { index, hub ->
-                        // La fila enfocada siempre queda justo debajo del hero.
-                        val rowModifier = Modifier.onFocusChanged {
-                            if (it.hasFocus) scope.launch { listState.animateScrollToItem(index) }
-                        }
-                        val landscape = hub.isContinue
-                        Shelf(hub.title, rowModifier, icon = if (landscape) AppIcons.Play else null) {
-                            items(hub.metadata, key = { it.ratingKey }) { m ->
-                                val k = "${hub.hubIdentifier}-${m.ratingKey}"
-                                if (landscape) {
-                                    PosterCard(
-                                        title = m.showTitle,
-                                        subtitle = continueSubtitle(m),
-                                        image = Plex.image(if (m.isEpisode) m.thumb else m.art ?: m.thumb, 352, 198),
-                                        aspect = 16f / 9f,
-                                        progress = m.progress,
-                                        modifier = Modifier.width(LandscapeWidth),
-                                        focus = target == k,
-                                        onFocused = { focused(k, m) },
-                                        onClick = { play(nav, m.ratingKey, resume = true) },
-                                    )
-                                } else {
-                                    PosterCard(
-                                        title = m.showTitle,
-                                        subtitle = posterSubtitle(m),
-                                        image = Plex.image(m.posterPath, 176, 264),
-                                        progress = m.progress,
-                                        watched = m.isFullyWatched,
-                                        badge = m.unwatchedCount,
-                                        modifier = Modifier.width(PosterWidth),
-                                        focus = target == k,
-                                        onFocused = { focused(k, m) },
-                                        onClick = { openItem(nav, m) },
-                                    )
-                                }
-                            }
-                        }
+                    items(rows, key = { hub -> hub.hubIdentifier.ifBlank { hub.title } }) { hub ->
+                        HubRow(hub, target, nav, onFocused = { k, m ->
+                            Cache.lastFocus[SCREEN] = k
+                            heroState.target = itemTarget(m)
+                        })
                     }
                 }
+            }
+        }
+    }
+}
+
+/** Fondo e información del título enfocado. */
+@Composable
+private fun HeroLayer(state: HeroState) {
+    val context = LocalContext.current
+    var hero by remember { mutableStateOf<HeroInfo?>(null) }
+    var artTarget by remember { mutableStateOf<String?>(null) }
+    var art by remember { mutableStateOf<String?>(null) }
+    LaunchedEffect(state.target) {
+        val t = state.target ?: return@LaunchedEffect
+        // Pequeña espera: al recorrer una fila rápido no se carga el fondo de cada tarjeta.
+        delay(140)
+        hero = t.quick().also { artTarget = it.art }
+        t.full()?.let { full ->
+            hero = full
+            artTarget = full.art
+        }
+    }
+    // El fondo cambia hasta que la imagen ya está descargada.
+    LaunchedEffect(artTarget) {
+        val url = artTarget
+        runCatching { prefetchImage(context, url) }
+        art = url
+    }
+    val tint = rememberTint(hero?.artTiny)
+
+    Box(Modifier.fillMaxSize()) {
+        Backdrop(art, tint)
+        HeroText(
+            hero,
+            Modifier
+                .fillMaxWidth()
+                .height(HeroHeight)
+                .padding(start = ContentStart, top = TopBarHeight + 40.dp, end = 48.dp),
+            showScore = true,
+        )
+    }
+}
+
+@Composable
+private fun HubRow(hub: Hub, target: String?, nav: NavController, onFocused: (String, Item) -> Unit) {
+    val landscape = hub.isContinue
+    Shelf(hub.title, icon = if (landscape) AppIcons.Play else null) {
+        items(hub.metadata, key = { it.ratingKey }) { m ->
+            val k = "${hub.hubIdentifier}-${m.ratingKey}"
+            if (landscape) {
+                PosterCard(
+                    title = m.showTitle,
+                    subtitle = continueSubtitle(m),
+                    image = Plex.image(if (m.isEpisode) m.thumb else m.art ?: m.thumb, 352, 198),
+                    aspect = 16f / 9f,
+                    progress = m.progress,
+                    modifier = Modifier.width(LandscapeWidth),
+                    focus = target == k,
+                    onFocused = { onFocused(k, m) },
+                    onClick = { play(nav, m.ratingKey, resume = true) },
+                )
+            } else {
+                PosterCard(
+                    title = m.showTitle,
+                    subtitle = posterSubtitle(m),
+                    image = Plex.image(m.posterPath, 176, 264),
+                    progress = m.progress,
+                    watched = m.isFullyWatched,
+                    badge = m.unwatchedCount,
+                    modifier = Modifier.width(PosterWidth),
+                    focus = target == k,
+                    onFocused = { onFocused(k, m) },
+                    onClick = { openItem(nav, m) },
+                )
             }
         }
     }

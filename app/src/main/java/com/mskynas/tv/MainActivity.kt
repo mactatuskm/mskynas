@@ -35,7 +35,7 @@ class MainActivity : ComponentActivity() {
         val loader = ImageLoader.Builder(applicationContext)
             .respectCacheHeaders(false)
             .memoryCache {
-                MemoryCache.Builder(applicationContext).maxSizePercent(0.20).build()
+                MemoryCache.Builder(applicationContext).maxSizePercent(0.25).build()
             }
             .diskCache {
                 DiskCache.Builder()

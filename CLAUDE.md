@@ -86,3 +86,13 @@
   en píldoras y episodios "S01E01 · Título". PlayerActivity usa como idioma preferido las pistas elegidas.
 - Browse: Sort (fecha agregada, título, año, calificación), Filter (sin ver), Shuffle y salto A–Z
   (solo con orden por título). Ordenar y filtrar se hace en la TV, sin pedir de nuevo el catálogo.
+- Rendimiento en Fire TV (prioridad del dueño: desplazamiento tan suave como Plex):
+  release con R8 (`isMinifyEnabled`, reglas en `app/proguard-rules.pro`: conservar `data/**`),
+  `profileinstaller` + `app/src/main/baseline-prof.txt` (precompila la app aunque se instale por fuera).
+  Desplazamiento por foco con `LocalBringIntoViewSpec` global (`PivotScroll` en `ui/Theme.kt`: el
+  enfocado queda a `ContentStart` del borde, resorte sin rebote); el detalle usa `MinimalScrolling`
+  en su lista y `PivotScrolling` en sus filas. No usar `animateScrollToItem` al enfocar.
+  El hero del Home lee el foco desde `HeroState` (las filas no se recomponen al moverse), el fondo
+  cambia hasta que la imagen ya se descargó (`prefetchImage`), el tinte se lee al dibujar (`State`).
+  JSON del servidor se decodifica en `Dispatchers.Default`; el Home guardado se lee en IO.
+  Tarjetas sin sombra (glow) al enfocar: solo borde blanco + escala.

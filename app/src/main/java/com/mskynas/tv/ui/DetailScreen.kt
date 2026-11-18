@@ -162,6 +162,8 @@ private fun DetailContent(
     Box(Modifier.fillMaxSize()) {
         Backdrop(hero.art, tint)
 
+        // La información de arriba no debe saltar al enfocar los botones; las filas sí usan foco fijo.
+        MinimalScrolling {
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
             state = rememberLazyListState(),
@@ -191,6 +193,7 @@ private fun DetailContent(
 
             if (m.type == "show" && seasons.isNotEmpty()) {
                 item(key = "seasons") {
+                    PivotScrolling {
                     LazyRow(
                         contentPadding = PaddingValues(start = ContentStart, end = 48.dp),
                         horizontalArrangement = Arrangement.spacedBy(6.dp),
@@ -199,9 +202,11 @@ private fun DetailContent(
                             SeasonPill(s.title, selected = s.ratingKey == seasonKey, onClick = { onSeason(s.ratingKey) })
                         }
                     }
+                    }
                 }
-                item(key = "episodes") { Episodes(episodes, nav, screen) }
+                item(key = "episodes") { PivotScrolling { Episodes(episodes, nav, screen) } }
             }
+        }
         }
     }
 

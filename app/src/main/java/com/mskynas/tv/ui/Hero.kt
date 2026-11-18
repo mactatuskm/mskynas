@@ -24,12 +24,14 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
@@ -55,6 +57,8 @@ import com.mskynas.tv.data.progress
 import com.mskynas.tv.data.qualityBadges
 import com.mskynas.tv.data.scoreLabel
 import com.mskynas.tv.data.showTitle
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 /** Lo que muestra la parte superior de la pantalla para el elemento enfocado. */
 data class HeroInfo(
@@ -133,9 +137,10 @@ fun heroFor(dir: Directory): HeroInfo = HeroInfo(
 /**
  * Color del fondo a partir del arte (como Silo): promedio de una versión diminuta de la imagen,
  * oscurecido para que el texto se lea. Cuesta una imagen de 32×18: casi nada.
+ * Devuelve un State: el color se lee solo al dibujar, así la transición no recompone la pantalla.
  */
 @Composable
-fun rememberTint(tinyUrl: String?): Color {
+fun rememberTint(tinyUrl: String?): State<Color> {
     val context = LocalContext.current
     var target by remember { mutableStateOf(Bg) }
     LaunchedEffect(tinyUrl) {
@@ -144,41 +149,51 @@ fun rememberTint(tinyUrl: String?): Color {
             ImageRequest.Builder(context).data(tinyUrl).allowHardware(false).size(32, 18).build()
         )
         val bitmap = ((result as? SuccessResult)?.drawable as? BitmapDrawable)?.bitmap ?: return@LaunchedEffect
-        var r = 0L
-        var g = 0L
-        var b = 0L
-        var n = 0
-        for (x in 0 until bitmap.width step 2) for (y in 0 until bitmap.height step 2) {
-            val p = bitmap.getPixel(x, y)
-            r += (p shr 16) and 0xFF
-            g += (p shr 8) and 0xFF
-            b += p and 0xFF
-            n++
+        target = withContext(Dispatchers.Default) {
+            var r = 0L
+            var g = 0L
+            var b = 0L
+            var n = 0
+            for (x in 0 until bitmap.width step 2) for (y in 0 until bitmap.height step 2) {
+                val p = bitmap.getPixel(x, y)
+                r += (p shr 16) and 0xFF
+                g += (p shr 8) and 0xFF
+                b += p and 0xFF
+                n++
+            }
+            if (n == 0) return@withContext target
+            val hsv = FloatArray(3)
+            android.graphics.Color.RGBToHSV((r / n).toInt(), (g / n).toInt(), (b / n).toInt(), hsv)
+            hsv[1] = (hsv[1] * 0.75f).coerceAtMost(0.55f)
+            hsv[2] = hsv[2].coerceIn(0.10f, 0.24f)
+            Color(android.graphics.Color.HSVToColor(hsv))
         }
-        if (n == 0) return@LaunchedEffect
-        val hsv = FloatArray(3)
-        android.graphics.Color.RGBToHSV((r / n).toInt(), (g / n).toInt(), (b / n).toInt(), hsv)
-        hsv[1] = (hsv[1] * 0.75f).coerceAtMost(0.55f)
-        hsv[2] = hsv[2].coerceIn(0.10f, 0.24f)
-        target = Color(android.graphics.Color.HSVToColor(hsv))
     }
-    val tint by animateColorAsState(target, tween(600), label = "tint")
-    return tint
+    return animateColorAsState(target, tween(600), label = "tint")
+}
+
+/** Descarga el arte antes de mostrarlo: así el fondo cambia ya listo, sin parpadeo a negro. */
+suspend fun prefetchImage(context: android.content.Context, url: String?) {
+    if (url == null) return
+    context.imageLoader.execute(ImageRequest.Builder(context).data(url).build())
 }
 
 /** Fondo: color del arte de base, el arte a la derecha y degradados hacia la izquierda y abajo. */
 @Composable
-fun Backdrop(art: String?, tint: Color = Bg) {
-    Box(Modifier.fillMaxSize().background(tint)) {
+fun Backdrop(art: String?, tint: State<Color>) {
+    val context = LocalContext.current
+    Box(Modifier.fillMaxSize().drawBehind { drawRect(tint.value) }) {
         Crossfade(
             targetState = art,
-            animationSpec = tween(450),
+            animationSpec = tween(400),
             modifier = Modifier.align(Alignment.TopEnd).fillMaxWidth(0.72f).fillMaxHeight(0.86f),
             label = "backdrop",
         ) { url ->
             if (url != null) {
+                // Tamaño fijo: si ya está en memoria, aparece en el mismo cuadro.
+                val request = remember(url) { ImageRequest.Builder(context).data(url).size(1280, 720).build() }
                 AsyncImage(
-                    model = url,
+                    model = request,
                     contentDescription = null,
                     modifier = Modifier.fillMaxSize(),
                     contentScale = ContentScale.Crop,
@@ -186,25 +201,27 @@ fun Backdrop(art: String?, tint: Color = Bg) {
                 )
             }
         }
-        Box(
-            Modifier.fillMaxSize().background(
-                Brush.horizontalGradient(
-                    0f to tint,
-                    0.28f to tint,
-                    0.5f to tint.copy(alpha = 0.55f),
-                    0.72f to Color.Transparent,
+        // Los degradados se dibujan en una sola capa y leen el color al dibujar.
+        Spacer(
+            Modifier.fillMaxSize().drawBehind {
+                val c = tint.value
+                drawRect(
+                    Brush.horizontalGradient(
+                        0f to c,
+                        0.28f to c,
+                        0.5f to c.copy(alpha = 0.55f),
+                        0.72f to Color.Transparent,
+                    )
                 )
-            )
-        )
-        Box(
-            Modifier.fillMaxSize().background(
-                Brush.verticalGradient(
-                    0f to Color.Transparent,
-                    0.45f to Color.Transparent,
-                    0.86f to tint,
-                    1f to tint,
+                drawRect(
+                    Brush.verticalGradient(
+                        0f to Color.Transparent,
+                        0.45f to Color.Transparent,
+                        0.86f to c,
+                        1f to c,
+                    )
                 )
-            )
+            }
         )
     }
 }
